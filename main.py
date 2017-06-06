@@ -14,28 +14,30 @@ plt.set_cmap('binary')
 
 def run(): 
 
-	a = np.invert(misc.imread("a.png")) # Image is black on white
+	bitmap_thick = np.invert(misc.imread("a.png")) # Image is black on white
+	bitmap = mp.thin(bitmap_thick)
 
-	pc = point_cloud(a)
-	kd_tree = spatial.KDTree(pc)
-	x = pc[np.random.randint(pc.shape[0]), :]
-	# neighbors_idx = kd_tree.query_ball_point(x, 5)
-	(distances, neighbors_idx) = kd_tree.query(x, 50)
-	neighbors = pc[neighbors_idx,:]
-	# x_sort = np.argsort(pc[0, :])
-	# y_sort = np.argsort(pc[1, :])
+	point_cloud = np.array(np.nonzero(bitmap)).T
+	kd_tree = spatial.KDTree(point_cloud)
 
-	data = np.concatenate(([x], neighbors))
-	beta = fitODR(data)
-	print(beta)
+	# x = pc[np.random.randint(pc.shape[0]), :]
+	
+	def find_tangent(x):
+		(distances, neighbors_idx) = kd_tree.query(x, 10)
+		# Alternative: neighbors_idx = kd_tree.query_ball_point(x, 5) 
+		neighbors = point_cloud[neighbors_idx,:]
+		data = np.concatenate(([x], neighbors))
+		beta = fitODR(data)
+		return math.atan(beta[0])
 
-	plt.scatter(neighbors[:,1], neighbors[:, 0], marker=".")
-	plt.scatter(x[1], x[0], marker="+")
-	# plt.scatter(pc[:,1], pc[:,0], marker="+")
+	tangents = np.apply_along_axis(find_tangent, axis=1, arr=point_cloud)
+	
+	plt.set_cmap('hot')
+	plt.scatter(point_cloud[:,1], point_cloud[:,0], marker=".", c=tangents)
 
-	plt.plot(np.array(range(0,100)) * beta[0] + beta[1])
+	# plt.plot(np.array(range(0,100)) * beta[0] + beta[1])
 
-	plt.imshow(a)
+	plt.imshow(bitmap)
 	plt.show()
 
 
@@ -43,14 +45,14 @@ def run():
 # image[coordinates] = 1
 
 def point_cloud(a):
-	return np.array(np.nonzero(a)).T
+	return 
 
 
 def fitODR(data):
 	def f(B, x):
 		return B[0]*x + B[1]
 	linear = odr.Model(f)
-	data = odr.Data(data[:,0], data[:,1])
+	data = odr.Data(data[:,1], data[:,0])
 	o = odr.ODR(data, linear, beta0=[1,0])
 	out = o.run()
 	return out.beta
