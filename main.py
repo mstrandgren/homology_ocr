@@ -12,86 +12,12 @@ import skimage.morphology as mp
 import matplotlib.pyplot as plt
 
 
-def simplices_from_str(str):
-	simplices_txt = str.split(',')
-
-	def translate_simplex(readable_simplex):
-		idx, simplex = readable_simplex
-		if len(simplex) == 1:
-			return (idx,)
-		elif len(simplex) == 2:
-			return (simplices_txt.index(simplex[0]), simplices_txt.index(simplex[1]))
-		elif len(simplex) == 3:
-			return (simplices_txt.index(simplex[:2]), simplices_txt.index(simplex[1:]), simplices_txt.index(simplex[0] + simplex[2]))
-
-	return list(map(translate_simplex, enumerate(simplices_txt)))
-
-def example():
-	ordered_simplices = simplices_from_str("s,t,u,st,v,w,sw,tw,uv,sv,su,uw,tu,tuw,suw,stu,suv,stw")
-	# ordered_simplices = simplices_from_str("a,b,c,d,ab,bc,cd,ad,ac,abc,acd")		
-	# degrees = [0,0,1,1,1,1,2,2,3,4,5]
-	print(ordered_simplices)
-	print(get_bar_code(ordered_simplices))
-
 
 # ------------------------------------------------------------------------
 
-def get_bar_code(ordered_simplices):
 
-	degrees = list(range(len(ordered_simplices)))
 
-	T = [None] * len(ordered_simplices)
-	marked = set()
-	L = [[], [], []]
-
-	def boundary(simplex):
-		k = len(simplex) - 1
-		if k == 0: return ()
-		if k >= 1: return simplex
-
-	def simplex_add(s1, s2):
-		v1 = np.zeros(max(s1 + s2) + 1)
-		v1[list(s1)] = 1
-		v2 = np.zeros(max(s1 + s2) + 1)
-		v2[list(s2)] = 1
-		return tuple(np.argwhere(np.mod(v1 + v2, 2)).flatten())
-
-	def remove_pivot_rows(simplex):
-		print("Removing pivot rows for {0}".format(simplex))
-		k = len(simplex) - 1
-		d = boundary(simplex)
-		print("Boundary is {0}".format(d))
-		it = 0
-		while len(d) > 0 and it < 100:
-			it += 1
-			i = max(d)
-			if T[i] is None: 
-				break
-			q = T[i][0]
-			d = simplex_add(d, T[i][1])
-			print("Added {1} to simplex, d is now {0}".format(d, T[i][1]))
-		return d
-
-	def compute_intervals(s_complex):
-		for j, simplex in enumerate(s_complex):
-			print("j = {0}, simplex={1}".format(j ,simplex))
-			d = remove_pivot_rows(simplex)
-			if len(d) == 0:
-				marked.add(simplex)
-			else:
-				i = max(d)
-				k = len(s_complex[i]) - 1
-				T[i] = (j, d)
-				L[k].append((degrees[i], degrees[j]))
-
-		for j, simplex in enumerate(s_complex):
-			if simplex in marked and T[j] is None:
-				k = len(simplex) - 1
-				L[k].append((degrees[j], math.inf))
-
-		return L
 	
-	return compute_intervals(ordered_simplices)
 
 
 # ------------------------------------------------------------------------
