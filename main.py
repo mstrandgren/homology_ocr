@@ -24,40 +24,35 @@ import matplotlib.pyplot as plt
 # ------------------------------------------------------------------------
 # ------------------------------------------------------------------------
 
+
+
+
 def run(): 
 
-	k = 20
+	k = 8
+	r = 2
 
 	# Get point cloud
-	bitmap_thick = np.invert(misc.imread("b.png")) # Image is black on white
+	image = misc.imread("b.png")
+	image_resized = misc.imresize(image, [50, 50], interp="nearest")
+	bitmap_thick = np.invert(image_resized) # Image is black on white
 	bitmap = mp.thin(bitmap_thick)
-	# bitmap = bitmap_thick
 	vertices = np.flip(np.array(np.nonzero(bitmap)).T, axis=1)
 	N = vertices.shape[0]
 
 	# Find tangents
 	kd_tree = spatial.KDTree(vertices)
-	find_tangent_partial = partial(find_tangent, k=k, vertices=vertices, kd_tree=kd_tree)
-	(tangents, curve) = np.apply_along_axis(find_tangent_partial, arr=vertices, axis=1).T
 
-	# vertices = [x, y], Nx2
-	# tangents = Nx1, radians
-	# curve = Nx1, float > 0
-
-
+	curve = find_curve(vertices, k, kd_tree)
+	edges = find_edges(vertices, r, kd_tree)
+	print("{verts} vertices\n{edges} edges".format(verts=vertices.shape[0], edges=edges.shape[0]))
 
 	# Plot result
 	
 	plt.set_cmap('hot')
 	(X,Y) = vertices.T
 
-	find_edges_partial = partial(find_edges, r=3, vertices=vertices, kd_tree=kd_tree)
-	find_edges_array = np.vectorize(find_edges_partial, otypes=[np.ndarray])
-	all_edges = np.concatenate(find_edges_array(np.arange(0,N)), axis=1).T
-	edges = remove_duplicate_edges(all_edges)
-	print("{verts} vertices\n{edges} edges".format(verts=vertices.shape[0], edges=edges.shape[0]))
-
-	plt.scatter(X, Y, marker=".")
+	plt.scatter(X, Y, marker=".", c=curve)
 
 	# plt.figure()
 	# threshold = np.max(curve) * .5
@@ -87,6 +82,20 @@ def run():
 	plt.show()
 
 
+# ---------------------------------------------------------------------------------
+
+def find_edges(vertices, r, kd_tree):
+	"""
+	returns Nx2 matrix, array elements are indices of the vertices that bound the edge
+	"""
+	N = vertices.shape[0]
+	find_edges_partial = partial(find_edges_for_point, r=r, vertices=vertices, kd_tree=kd_tree)
+	find_edges_array = np.vectorize(find_edges_partial, otypes=[np.ndarray])
+	all_edges = np.concatenate(find_edges_array(np.arange(0,N)), axis=1).T
+	edges = remove_duplicate_edges(all_edges)
+	return edges
+
+
 def remove_duplicate_edges(edges):
 	"""
 	edges is a column array
@@ -96,14 +105,24 @@ def remove_duplicate_edges(edges):
 	return edges[unique_idx, :]
 
 
-def find_edges(idx, r, vertices, kd_tree):
+def find_edges_for_point(idx, r, vertices, kd_tree):
 	x = vertices[idx,:]
 	neighbors_idx = np.array(kd_tree.query_ball_point(x, r))
 	N = neighbors_idx.shape[0]
 	return np.array([np.ones(N).astype(int) * idx, neighbors_idx.T])
 
-# def find_edges(vertices, r, kd_tree):
-# 	result = 
+# ---------------------------------------------------------------------------------
+
+def find_curve(vertices, k, kd_tree):
+	"""
+	vertices: Nx2-array of vertices
+	k: number of neighbors
+	kd_tree: A KD-tree of the vertices (pre-made)
+	"""
+	find_tangent_partial = partial(find_tangent, k=k, vertices=vertices, kd_tree=kd_tree)
+	(tangents, curve) = np.apply_along_axis(find_tangent_partial, arr=vertices, axis=1).T
+	return curve
+
 
 def find_tangent(x, k, vertices, kd_tree):
 	"""
@@ -138,7 +157,7 @@ def find_tangent(x, k, vertices, kd_tree):
 
 	return tangent, curve
 
-
+# ------------------------------------------------------------------------
 
 def fitODR(data):
 	def f(B, x):
@@ -149,10 +168,8 @@ def fitODR(data):
 	out = o.run()
 	return out.beta
 
-
-
+# ------------------------------------------------------------------------
+# ------------------------------------------------------------------------
 # ------------------------------------------------------------------------
 
-example()
-
-# run()
+run()
