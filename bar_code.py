@@ -6,73 +6,82 @@ import matplotlib.pyplot as plt
 
 def dim(simplex):
 	# Returns scalar 
-	return np.nonzero(simplex)[0].size - 1
+	return len(simplex) - 1
 
 def no_zeros(arr):
 	return arr[np.nonzero(arr)[0]]
 
-def is_empty(t_i):
-	# Returns true if t_i is all zeros
-	return np.nonzero(t_i)[0].size == 0
-
 def boundary(simplex):
-	# Returns ndarray
+	# Returns set
 	k = dim(simplex)
-	if k == 0: return np.array([], dtype=int)
-	return no_zeros(simplex)
+	if k == 0: return set(())
+	elif k == 1: return set(tuple(simplex))
+	else: return set((simplex[:2], simplex[0] + simplex[2], simplex[1:]))
 
 def simplex_add(s1, s2):
-	# Returns ndarray
-	return no_zeros(np.setxor1d(s1, s2))
+	# Returns set
+	return set(tuple(s1)).symmetric_difference(set(tuple(s2)))
 
-def remove_pivot_rows(simplex, T, marked):
+def remove_pivot_rows(simplex, T, marked, youngest_simplex):
 	# Returns ndarray
 	k = dim(simplex)
-	d = np.intersect1d(boundary(simplex), list(marked))
+	d = boundary(simplex).intersection(marked)
+	print("'{0}': d={1}".format(simplex, d))
 
-	while d.size > 0:
-		i = np.max(d) - 1 # 1-index
-		if T[i] is None:
+	while len(d) > 0:
+		sigma_i = youngest_simplex(d)
+		# print(sigma_i)
+		if T.get(sigma_i) is None:
 			break
-		q = T[i][0]
-		d = simplex_add(d, T[i][1])
+		d = simplex_add(d, T[sigma_i])
 	return d
 
 def get_bar_code(ordered_simplices, degrees = None):
-	m_max, k_max = ordered_simplices.shape
+	"""
+	ordered_simplices is a list of simplices
+	degrees is a map from simplex to degree (birth time)
 
-	if degrees is None:
-		degrees = np.arange(len(ordered_simplices))
+	"""
+	m_max = len(ordered_simplices)
+	k_max = 3
 
-	# T is list of (int, ndarray), or None
-	T = [None] * m_max 
-	
+	# T is map of (simplex, (idx, set))
+	T = {}
+
+	def youngest_simplex(chain):
+		degree = -1
+		youngest = None
+		for simplex in chain:
+			if degrees[simplex] > degree:
+				degree = degrees[simplex]
+				youngest = simplex
+		return youngest
+
 	# Set of indices (int) of marked simplices
 	marked = set()
 
 	# Output, list of 3d vectors [start, stop, k]
 	L = []
 
-	for j in range(m_max):
-		simplex = ordered_simplices[j,:]
-		d = remove_pivot_rows(simplex, T, marked)
-		if d.size == 0:
-			marked.add(j + 1)
+	for simplex in ordered_simplices:
+		d = remove_pivot_rows(simplex, T, marked, youngest_simplex)
+		if len(d) == 0:
+			print("Marking {0}".format(simplex))
+			marked.add(simplex)
 		else:
-			i = np.max(d) - 1 # 1-index
-			k = dim(ordered_simplices[i,:])
-			T[i] = (j,d)
-			L.append([degrees[i], degrees[j], k])
+			sigma_i = youngest_simplex(d)
+			# print("'{0}': d={1}, sigma_i={2} P=({3},{4})".format(simplex, d, sigma_i, degrees[sigma_i], degrees[simplex]))
+			k = dim(sigma_i)
+			T[sigma_i] = d
+			L.append((degrees[sigma_i], degrees[simplex], k))
 
-	for j in marked:
-		simplex = ordered_simplices[j - 1,:]
-		if T[j - 1] is None:
+	print(marked)
+	for simplex in marked:
+		if T.get(simplex) is None:
 			k = dim(simplex)
-			L.append([degrees[j - 1], m_max + 1, k])
+			L.append((degrees[simplex], math.inf, k))
 
-	Ln = np.array(L)
-	return Ln[Ln[:,0].argsort()]
-
+	return L
 
 # ------------------------------------------------------------------------
 # ------------------------------------------------------------------------
@@ -81,17 +90,26 @@ def get_bar_code(ordered_simplices, degrees = None):
 def test():
 	# From Edelsbrunner, Letscher & Zomorodian
 	ordered_simplices = simplices_from_str("s,t,u,st,v,w,sw,tw,uv,sv,su,uw,tu,tuw,suw,stu,suv,stw")
+	# for s in ordered_simplices:
+	# 	print("{0}: {1}".format(s, boundary(s)))
 	# From Zomorodian & Carlsson
 	# ordered_simplices = simplices_from_str("a,b,c,d,ab,bc,cd,ad,ac,abc,acd")		
 	# degrees = [0,0,1,1,1,1,2,2,3,4,5]
+
+	degrees = {}
+	for idx, s in enumerate(ordered_simplices):
+		degrees[s] = idx
+
 	print(ordered_simplices)
-	barcode = get_bar_code(ordered_simplices)
-	print(barcode)
+	barcode = get_bar_code(ordered_simplices, degrees)
+	print(sorted(barcode, key=lambda tup: tup[0]))
 	plot_barcode_gant(barcode)
 
 
 def simplices_from_str(str):
 	simplices_txt = str.split(',')
+	return simplices_txt
+
 
 	def translate_simplex(readable_simplex):
 		idx, simplex = readable_simplex
