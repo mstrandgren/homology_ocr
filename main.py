@@ -55,15 +55,33 @@ def run():
 	vertex_indices = ordered_simplices[vidx,0].flatten()
 	edge_indices = ordered_simplices[eidx,0].flatten()
 	# Plot result
-	print(vertices)
-	print(ordered_simplices)
+	# print(vertices)
+	# print(ordered_simplices)
 	# plt.set_cmap('hot')
 	(X,Y) = vertices.T
-	plt.scatter(X, Y, marker=".")
+	# plt.scatter(X, Y, marker=".")
 
-	for idx, simplex in enumerate(ordered_simplices[vidx,:]):
-		s = simplex.flatten()
-		plt.annotate("{0} -> {1}".format(s[0], s[3]), (X[s[0]], Y[s[0]]))
+
+
+	def plot_simplex(simplex, plt):
+		(i, b1, b2, deg, k) = simplex.flatten()
+		print(plt)
+		if k == 0:
+			plt.plot(X[i], Y[i], marker=".", zorder=2, c='k')
+			plt.annotate("{0}/{1:1.4f}".format(deg, curve[i]), (X[i], Y[i]))
+		if k == 1:
+			plt.plot(X[[b1,b2]], Y[[b1,b2]], lw=1, c='#aaaaaa', zorder=1)
+
+	# print(ordered_simplices[np.argwhere(ordered_simplices[:,3]<3).flatten(),:])
+	print(ordered_simplices)
+
+	f, ax = plt.subplots(3,3)
+	axs = tuple([e for tupl in ax for e in tupl])
+	for idx, subp in enumerate(axs):
+		np.apply_along_axis(plot_simplex, arr=ordered_simplices[np.argwhere(ordered_simplices[:,3]<idx+1).flatten(),:], axis=1, plt=subp)
+	
+
+	# plt.annotate("{0} -> {1}".format(s[0], s[3]), (X[s[0]], Y[s[0]]))
 
 	# v_d = np.zeros([X.size, 4], dtype=int)
 	# v_d[:,:2] = vertices
@@ -89,34 +107,11 @@ def run():
 
 
 
-	# plt.scatter(X[degree], Y[degree], marker=".", c=range(len(degree)))
-	# plt.figure()
-	# plt.plot(curve[degree])
-	# plt.figure()
-	# threshold = np.max(curve) * .5
-	# (X,Y) = vertices[curve > threshold, :].T
-	
-	# plt.scatter(X, -Y, marker=".", c=curve)
-	# rand_idx = np.random.randint(vertices.shape[0])
-	# indices = [0,5]
-	# for idx1,_ in enumerate(X):
-	# 	for idx2,_ in enumerate(X):
-	# 		plt.plot(X[[idx1,idx2]], Y[[idx1,idx2]], c="magenta", lw=1)
 
+	# def plot_edge(edge):
+	# 	plt.plot(X[edge], Y[edge], c="magenta", lw=1)
 
-	def plot_edge(edge):
-		plt.plot(X[edge], Y[edge], c="magenta", lw=1)
-
-	np.apply_along_axis(plot_edge, arr=edges, axis=1)
-
-
-	# plt.figure()
-	# plt.scatter(vertices[:,1], vertices[:,0], marker=".", c=curve)
-	# plt.figure()
-
-	# plt.imshow(bitmap)
-	# plt.scatter(x[1], x[0], marker=".", c=tangents)
-	# plt.plot(np.array(range(0,100)) * beta[0] + beta[1])
+	# np.apply_along_axis(plot_edge, arr=edges, axis=1)
 	
 	plt.show()
 
@@ -133,7 +128,7 @@ def get_ordered_simplices(vertices, curve, edges):
 	N_e = edges.shape[0]
 
 	degree = curve.argsort()
-	c = np.zeros([N_v + N_e,6], dtype=int)
+	c = np.zeros([N_v + N_e,5], dtype=int)
 	c[0:N_v,0] = np.arange(curve.size) # Id
 	# c[:,1:3] = 0 Boundary
 	c[degree,3] = np.arange(curve.size) # Degree
