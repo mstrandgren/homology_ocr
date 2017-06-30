@@ -3,6 +3,7 @@ import operator
 import numpy as np
 from copy import deepcopy
 import matplotlib.pyplot as plt
+from scipy.optimize import linear_sum_assignment
 
 def dim(simplex):
 	# Returns scalar 
@@ -88,6 +89,67 @@ def get_bar_code(ordered_simplices, degrees = None):
 
 	out = L[:N_L,:]
 	return out[np.argsort(out[:,0]),:]
+
+# ------------------------------------------------------------------------
+	
+def barcode_diff(bar1, bar2, inf = 1000):
+	"""	
+	From "A Barcode Shape Descriptor for Curve Point Cloud Data", 2.4
+
+	bars are Nx2 matrices
+	result is and N1xN2 matrix
+
+	infinite distances have a lot of impact, figure out what to do about them
+	"""
+	bar1[bar1==math.inf] = inf
+	bar2[bar2==math.inf] = inf
+
+	l1 = bar1[:,1] - bar1[:,0]
+	l2 = bar2[:,1] - bar2[:,0]
+	l_max = np.maximum.outer(l1,l2)
+
+	x = np.add.outer(bar1[:,1], -bar2[:,0])
+	y = np.add.outer(-bar1[:,0], bar2[:,1])
+
+	is_disjoint = np.logical_or(x<=0,y<=0)
+	result = np.zeros(x.shape)
+	disjoint = np.add.outer(l1, l2)
+
+	result[is_disjoint] = disjoint[is_disjoint]
+	is_overlap = np.logical_and(x<l_max, y<l_max)
+	overlap = np.abs(np.add.outer(l1, -l2))
+	result[is_overlap] = overlap[is_overlap]
+
+	is_partial = np.logical_and(np.logical_not(is_overlap), np.logical_not(is_disjoint))
+	partial = np.abs(x - y)
+	result[is_partial] = partial[is_partial]
+
+	i,j = linear_sum_assignment(result)
+	return np.sum(result[i,j])
+
+
+test_bars = [
+[(0,2), (3,5)], # No overlap, l=4
+[(0,4), (2,6)], # Partial overlap, l=4
+[(0,4), (2,3)], # Full overlap, l=3
+[(0,2), (0,5)], # l=3
+[(0,5), (3,5)], # l=3
+[(1,2), (0,2)], # l=1
+[(1,4), (0,math.inf)], # l=inf
+[(1,2), (5,math.inf)], # l=inf
+[(1,math.inf), (5,math.inf)] # l=inf
+]
+
+bar1 = np.zeros([len(test_bars),2])
+bar2 = np.zeros([len(test_bars),2])
+for idx,b in enumerate(test_bars):
+	bar1[idx,:] = b[0]
+	bar2[idx,:] = b[1]
+
+
+barcode_diff(bar1, bar2)
+
+
 
 # ------------------------------------------------------------------------
 # ------------------------------------------------------------------------
