@@ -6,44 +6,50 @@ import matplotlib.pyplot as plt
 
 def dim(simplex):
 	# Returns scalar 
-	return len(simplex) - 1
+	return simplex[4]
 
-def no_zeros(arr):
-	return arr[np.nonzero(arr)[0]]
+# def no_zeros(arr):
+# 	return arr[np.nonzero(arr)[0]]
 
 def boundary(simplex):
 	# Returns set
 	k = dim(simplex)
 	if k == 0: return set(())
-	elif k == 1: return set(tuple(simplex))
-	else: return set((simplex[:2], simplex[0] + simplex[2], simplex[1:]))
+	elif k == 1: return set(simplex[1:3])
+	else: 
+		assert(false)
+		# return set((simplex[:2], simplex[0] + simplex[2], simplex[1:]))
 
 def simplex_add(s1, s2):
 	# Returns set
-	return set(tuple(s1)).symmetric_difference(set(tuple(s2)))
+	return s1.symmetric_difference(s2)
+	# set(tuple(s1)).symmetric_difference(set(tuple(s2)))
 
 def remove_pivot_rows(simplex, T, marked, youngest_simplex):
 	# Returns ndarray
 	k = dim(simplex)
 	d = boundary(simplex).intersection(marked)
-	print("'{0}': d={1}".format(simplex, d))
 
 	while len(d) > 0:
-		sigma_i = youngest_simplex(d)
+		i = youngest_simplex(d)
 		# print(sigma_i)
-		if T.get(sigma_i) is None:
+		if T.get(i) is None:
 			break
-		d = simplex_add(d, T[sigma_i])
+		d = simplex_add(d, T[i])
 	return d
 
 def get_bar_code(ordered_simplices, degrees = None):
 	"""
-	ordered_simplices is a list of simplices
+	ordered_simplices is a 5 column matrix (i, b1, b2, deg, k)
 	degrees is a map from simplex to degree (birth time)
 
+	a simplex is a flat 5-array
+
 	"""
-	m_max = len(ordered_simplices)
-	k_max = 3
+	m_max = ordered_simplices.shape[0]
+	k_max = 2
+	lookup = ordered_simplices[np.argsort(ordered_simplices[:,0]),:]
+	degrees = lookup[:,3]
 
 	# T is map of (simplex, (idx, set))
 	T = {}
@@ -66,20 +72,17 @@ def get_bar_code(ordered_simplices, degrees = None):
 	for simplex in ordered_simplices:
 		d = remove_pivot_rows(simplex, T, marked, youngest_simplex)
 		if len(d) == 0:
-			print("Marking {0}".format(simplex))
-			marked.add(simplex)
+			marked.add(simplex[0])
 		else:
-			sigma_i = youngest_simplex(d)
-			# print("'{0}': d={1}, sigma_i={2} P=({3},{4})".format(simplex, d, sigma_i, degrees[sigma_i], degrees[simplex]))
+			sigma_i = lookup[youngest_simplex(d),:]
 			k = dim(sigma_i)
-			T[sigma_i] = d
-			L.append((degrees[sigma_i], degrees[simplex], k))
+			T[sigma_i[0]] = d
+			L.append((degrees[sigma_i[0]], degrees[simplex[0]], k))
 
-	print(marked)
-	for simplex in marked:
-		if T.get(simplex) is None:
-			k = dim(simplex)
-			L.append((degrees[simplex], math.inf, k))
+	for simplex_id in marked:
+		if T.get(simplex_id) is None:
+			k = dim(lookup[simplex_id])
+			L.append((degrees[simplex_id], 100, k))
 
 	return L
 
@@ -142,10 +145,11 @@ def plot_barcode_scatter(barcode):
 	plt.show()
 
 def plot_barcode_gant(barcode):
-	inf = np.max(barcode[:,1]) + 1
+	inf = 0
 	markers = ('s', '*', 'x')
-	for i in range(barcode.shape[0]):
-		plt.plot(barcode[i, 0:2], [i, i], marker=markers[barcode[i, 2]], c='k', lw=1, ms=3)
+	for idx, tup in enumerate(barcode):
+		plt.plot(tup[:2], [idx, idx], marker=markers[tup[2]], c='k', lw=1, ms=3)
+		inf = max(inf, tup[1])
 
 	axes = plt.gca()
 	axes.set_xlim([-0.5, inf - 1.5])

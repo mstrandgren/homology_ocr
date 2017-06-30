@@ -10,7 +10,7 @@ from scipy import misc, ndimage, spatial, odr
 import numpy as np
 import skimage.morphology as mp
 import matplotlib.pyplot as plt
-
+import bar_code as bc
 
 
 # ------------------------------------------------------------------------
@@ -30,7 +30,7 @@ def run():
 
 	k = 8
 	r = 2
-	sz = 50
+	sz = 10
 
 	# Get point cloud
 	image = misc.imread("b.png")
@@ -46,31 +46,30 @@ def run():
 	curve = find_curve(vertices, k, kd_tree)
 	edges = find_edges(vertices, r, kd_tree)
 
-	print("{verts} vertices\n{edges} edges".format(verts=vertices.shape[0], edges=edges.shape[0]))
+	# print("{verts} vertices\n{edges} edges".format(verts=vertices.shape[0], edges=edges.shape[0]))
 
 	ordered_simplices = get_ordered_simplices(vertices, curve, edges)
 
-	vidx = np.argwhere(ordered_simplices[:,4]==0)
-	eidx = np.argwhere(ordered_simplices[:,4]==1)
-	vertex_indices = ordered_simplices[vidx,0].flatten()
-	edge_indices = ordered_simplices[eidx,0].flatten()
+	# print(ordered_simplices)
+	P = bc.get_bar_code(ordered_simplices)
+	print("P is -----")
+	print(sorted(P, key=lambda tup: tup[0]))
+	# bc.plot_barcode_gant(P)
 	# Plot result
 	# print(vertices)
 	# print(ordered_simplices)
-	# plt.set_cmap('hot')
-	(X,Y) = vertices.T
-	# plt.scatter(X, Y, marker=".")
 
-	plot_simplices(ordered_simplices, math.inf, vertices, plt)
-	D_max = np.max(ordered_simplices[:,3])
+	# plot_simplices(ordered_simplices, math.inf, vertices, plt)
 
-	f, ax = plt.subplots(3,3, sharex=True, sharey=True)
-	axs = tuple([e for tupl in ax for e in tupl])
-	for idx, subp in enumerate(axs):
-		subp.set_title("t = {0}".format(idx * 20))
-		plot_simplices(ordered_simplices, idx * 20, vertices, subp)
+	# D_max = np.max(ordered_simplices[:,3])
 
-	plt.show()
+	# f, ax = plt.subplots(3,3, sharex=True, sharey=True)
+	# axs = tuple([e for tupl in ax for e in tupl])
+	# for idx, subp in enumerate(axs):
+	# 	subp.set_title("t = {0}".format(idx * 1))
+	# 	plot_simplices(ordered_simplices, idx * 1, vertices, subp)
+
+	# plt.show()
 
 
 # ---------------------------------------------------------------------------------
@@ -82,10 +81,9 @@ def plot_simplex(simplex, plt, vertices):
 	(i, b1, b2, deg, k) = simplex.flatten()
 	if k == 0:
 		plt.plot(vertices[i,0], vertices[i,1], marker=".", zorder=2, c='k')
-		# plt.annotate("{0}/{1:1.4f}".format(deg, curve[i]), (X[i], Y[i]))
+		plt.annotate("{0}".format(i), (vertices[i,0], vertices[i,1]))
 	if k == 1:
 		plt.plot(vertices[[b1,b2],0], vertices[[b1,b2],1], lw=1, c='#aaaaaa', zorder=1)
-
 
 # ---------------------------------------------------------------------------------
 
