@@ -46,37 +46,33 @@ def run():
 	curve = find_curve(vertices, k, kd_tree)
 	edges = find_edges(vertices, r, kd_tree)
 
-	degree = curve.argsort()
-
-
 	print("{verts} vertices\n{edges} edges".format(verts=vertices.shape[0], edges=edges.shape[0]))
 
+	ordered_simplices = get_ordered_simplices(vertices, curve, edges)
+
+	vidx = np.argwhere(ordered_simplices[:,4]==0)
+	eidx = np.argwhere(ordered_simplices[:,4]==1)
+	vertex_indices = ordered_simplices[vidx,0].flatten()
+	edge_indices = ordered_simplices[eidx,0].flatten()
 	# Plot result
-	# print(vertices)
+	print(vertices)
+	print(ordered_simplices)
 	# plt.set_cmap('hot')
 	(X,Y) = vertices.T
+	plt.scatter(X, Y, marker=".")
+
+	for idx, simplex in enumerate(ordered_simplices[vidx,:]):
+		s = simplex.flatten()
+		plt.annotate("{0} -> {1}".format(s[0], s[3]), (X[s[0]], Y[s[0]]))
+
 	# v_d = np.zeros([X.size, 4], dtype=int)
 	# v_d[:,:2] = vertices
 	# v_d[:,2] = np.arange(X.size)[degree]
 	# v_d[:,3] = curve * 1000
 	
-	N_v = vertices.shape[0]
-	N_e = edges.shape[0]
 
-	c = np.zeros([N_v + N_e,6])
-	c[0:N_v,0] = np.arange(curve.size) # Id
-	# c[:,1:3] = 0 Boundary
-	c[degree,3] = np.arange(curve.size) # Degree
-	# c[0:N_v,4] = 0 Dimenison
 
-	c[N_v:,0] = np.arange(N_e) + N_v # Id
-	c[N_v:,1:3] = edges # Boundary
-	c[N_v:,3] = np.amax([c[edges[:,0],3].T, c[edges[:,1],3].T], axis=0) # Degree
-	c[N_v:,4] = np.ones(N_e) # edge_dim
-
-	dual_sorter = c[:,3] + 1.0j * c[:,4]
-	ordered_simplices = c[np.argsort(dual_sorter), :]
-	# print(c[np.argsort(c[:,5]),:])
+		# print(c[np.argsort(c[:,5]),:])
 
 	# e[:,3] = c[edges[:,0],2]
 	# e[:,4] = c[edges[:,1],2]
@@ -95,7 +91,6 @@ def run():
 
 	# plt.scatter(X[degree], Y[degree], marker=".", c=range(len(degree)))
 	# plt.figure()
-	plt.scatter(X, Y, marker=".", c=curve)
 	# plt.plot(curve[degree])
 	# plt.figure()
 	# threshold = np.max(curve) * .5
@@ -123,7 +118,34 @@ def run():
 	# plt.scatter(x[1], x[0], marker=".", c=tangents)
 	# plt.plot(np.array(range(0,100)) * beta[0] + beta[1])
 	
-	# plt.show()
+	plt.show()
+
+
+# ---------------------------------------------------------------------------------
+
+def get_ordered_simplices(vertices, curve, edges): 
+	"""
+	Orders simplices based on curve (and puts into a useful structure)
+	[id, boundary1, boundary2, degree, dimension]
+
+	"""
+	N_v = vertices.shape[0]
+	N_e = edges.shape[0]
+
+	degree = curve.argsort()
+	c = np.zeros([N_v + N_e,6], dtype=int)
+	c[0:N_v,0] = np.arange(curve.size) # Id
+	# c[:,1:3] = 0 Boundary
+	c[degree,3] = np.arange(curve.size) # Degree
+	# c[0:N_v,4] = 0 Dimenison
+	c[N_v:,0] = np.arange(N_e) + N_v # Id
+	c[N_v:,1:3] = edges # Boundary
+	c[N_v:,3] = np.amax([c[edges[:,0],3].T, c[edges[:,1],3].T], axis=0) # Degree
+	c[N_v:,4] = np.ones(N_e) # edge_dim
+
+	dual_sorter = c[:,3] + 1.0j * c[:,4]
+	ordered_simplices = c[np.argsort(dual_sorter), :]
+	return ordered_simplices
 
 
 # ---------------------------------------------------------------------------------
