@@ -26,15 +26,15 @@ import matplotlib.pyplot as plt
 
 
 
-
 def run(): 
 
 	k = 8
 	r = 2
+	sz = 50
 
 	# Get point cloud
 	image = misc.imread("b.png")
-	image_resized = misc.imresize(image, [10, 10], interp="nearest")
+	image_resized = misc.imresize(image, [sz, sz], interp="nearest")
 	bitmap_thick = np.invert(image_resized) # Image is black on white
 	bitmap = mp.thin(bitmap_thick)
 	vertices = np.flip(np.array(np.nonzero(bitmap)).T, axis=1)
@@ -61,59 +61,30 @@ def run():
 	(X,Y) = vertices.T
 	# plt.scatter(X, Y, marker=".")
 
+	plot_simplices(ordered_simplices, math.inf, vertices, plt)
+	D_max = np.max(ordered_simplices[:,3])
 
-
-	def plot_simplex(simplex, plt):
-		(i, b1, b2, deg, k) = simplex.flatten()
-		print(plt)
-		if k == 0:
-			plt.plot(X[i], Y[i], marker=".", zorder=2, c='k')
-			plt.annotate("{0}/{1:1.4f}".format(deg, curve[i]), (X[i], Y[i]))
-		if k == 1:
-			plt.plot(X[[b1,b2]], Y[[b1,b2]], lw=1, c='#aaaaaa', zorder=1)
-
-	# print(ordered_simplices[np.argwhere(ordered_simplices[:,3]<3).flatten(),:])
-	print(ordered_simplices)
-
-	f, ax = plt.subplots(3,3)
+	f, ax = plt.subplots(3,3, sharex=True, sharey=True)
 	axs = tuple([e for tupl in ax for e in tupl])
 	for idx, subp in enumerate(axs):
-		np.apply_along_axis(plot_simplex, arr=ordered_simplices[np.argwhere(ordered_simplices[:,3]<idx+1).flatten(),:], axis=1, plt=subp)
-	
+		subp.set_title("t = {0}".format(idx * 20))
+		plot_simplices(ordered_simplices, idx * 20, vertices, subp)
 
-	# plt.annotate("{0} -> {1}".format(s[0], s[3]), (X[s[0]], Y[s[0]]))
-
-	# v_d = np.zeros([X.size, 4], dtype=int)
-	# v_d[:,:2] = vertices
-	# v_d[:,2] = np.arange(X.size)[degree]
-	# v_d[:,3] = curve * 1000
-	
-
-
-		# print(c[np.argsort(c[:,5]),:])
-
-	# e[:,3] = c[edges[:,0],2]
-	# e[:,4] = c[edges[:,1],2]
-
-	# e_d = np.zeros([edges.shape[0], 4], dtype=int)
-	# e_d[:,:2] = edges
-	# e_d[:,2] = v_d[e_d[:,0],2]
-	# e_d[:,3] = v_d[e_d[:,1],2]
-
-	# print(vertices)
-	# print(v_d[degree,:])
-	# print(v_d)
-	# print(edges)
-
-
-
-
-	# def plot_edge(edge):
-	# 	plt.plot(X[edge], Y[edge], c="magenta", lw=1)
-
-	# np.apply_along_axis(plot_edge, arr=edges, axis=1)
-	
 	plt.show()
+
+
+# ---------------------------------------------------------------------------------
+
+def plot_simplices(simplices, degree, vertices, plt):
+	np.apply_along_axis(plot_simplex, arr=simplices[np.argwhere(simplices[:,3]<=degree).flatten(),:], axis=1, plt=plt, vertices=vertices)
+
+def plot_simplex(simplex, plt, vertices):
+	(i, b1, b2, deg, k) = simplex.flatten()
+	if k == 0:
+		plt.plot(vertices[i,0], vertices[i,1], marker=".", zorder=2, c='k')
+		# plt.annotate("{0}/{1:1.4f}".format(deg, curve[i]), (X[i], Y[i]))
+	if k == 1:
+		plt.plot(vertices[[b1,b2],0], vertices[[b1,b2],1], lw=1, c='#aaaaaa', zorder=1)
 
 
 # ---------------------------------------------------------------------------------
