@@ -52,24 +52,30 @@ def run():
 
 	# print(ordered_simplices)
 	P = bc.get_bar_code(ordered_simplices)
-	print("P is -----")
-	print(sorted(P, key=lambda tup: tup[0]))
-	# bc.plot_barcode_gant(P)
+
+	bc.plot_barcode_gant(P)
+	
 	# Plot result
-	# print(vertices)
-	# print(ordered_simplices)
 
-	# plot_simplices(ordered_simplices, math.inf, vertices, plt)
+	def plot_complex():
+		"""
+		Plots the entire complex. Should work for large sets, but it's slow.
+		"""
+		plot_simplices(ordered_simplices, math.inf, vertices, plt)
 
-	# D_max = np.max(ordered_simplices[:,3])
 
-	# f, ax = plt.subplots(3,3, sharex=True, sharey=True)
-	# axs = tuple([e for tupl in ax for e in tupl])
-	# for idx, subp in enumerate(axs):
-	# 	subp.set_title("t = {0}".format(idx * 1))
-	# 	plot_simplices(ordered_simplices, idx * 1, vertices, subp)
+	def plot_sequence():
+		"""
+		Plots the filtration in a number of subplots. Works for really small sets
+		"""	
+		f, ax = plt.subplots(3,3, sharex=True, sharey=True)
+		axs = tuple([e for tupl in ax for e in tupl])
+		for idx, subp in enumerate(axs):
+			subp.set_title("t = {0}".format(idx * 1))
+			plot_simplices(ordered_simplices, idx * 1, vertices, subp)
 
-	# plt.show()
+
+	plt.show()
 
 
 # ---------------------------------------------------------------------------------
