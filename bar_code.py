@@ -92,7 +92,7 @@ def get_bar_code(ordered_simplices, degrees = None):
 
 # ------------------------------------------------------------------------
 	
-def barcode_diff(bar1, bar2, inf = 1000):
+def barcode_diff(bar1, bar2, inf = None):
 	"""	
 	From "A Barcode Shape Descriptor for Curve Point Cloud Data", 2.4
 
@@ -101,8 +101,17 @@ def barcode_diff(bar1, bar2, inf = 1000):
 
 	infinite distances have a lot of impact, figure out what to do about them
 	"""
+	if inf is None:
+		bmax = max(np.max(bar1[bar1!=math.inf]), np.max(bar2[bar2!=math.inf]))
+		inf = bmax * 2
+
+
 	bar1[bar1==math.inf] = inf
 	bar2[bar2==math.inf] = inf
+
+	l1, l2 = bar1.shape[0], bar2.shape[0]
+	if l1 > l2:
+		bar1, bar2 = bar2, bar1
 
 	l1 = bar1[:,1] - bar1[:,0]
 	l2 = bar2[:,1] - bar2[:,0]
@@ -125,30 +134,13 @@ def barcode_diff(bar1, bar2, inf = 1000):
 	result[is_partial] = partial[is_partial]
 
 	i,j = linear_sum_assignment(result)
-	return np.sum(result[i,j])
-
-
-test_bars = [
-[(0,2), (3,5)], # No overlap, l=4
-[(0,4), (2,6)], # Partial overlap, l=4
-[(0,4), (2,3)], # Full overlap, l=3
-[(0,2), (0,5)], # l=3
-[(0,5), (3,5)], # l=3
-[(1,2), (0,2)], # l=1
-[(1,4), (0,math.inf)], # l=inf
-[(1,2), (5,math.inf)], # l=inf
-[(1,math.inf), (5,math.inf)] # l=inf
-]
-
-bar1 = np.zeros([len(test_bars),2])
-bar2 = np.zeros([len(test_bars),2])
-for idx,b in enumerate(test_bars):
-	bar1[idx,:] = b[0]
-	bar2[idx,:] = b[1]
-
-
-barcode_diff(bar1, bar2)
-
+	nonmatched = list(set(range(result.shape[1])).difference(set(j)))
+	matched_sum = np.sum(result[i,j])
+	nonmatched_sum = np.sum(result[:,nonmatched])
+	# print(result)
+	# print(matched_sum)
+	# print(nonmatched_sum)
+	return matched_sum + nonmatched_sum
 
 
 # ------------------------------------------------------------------------
@@ -167,20 +159,48 @@ def plot_barcode_scatter(barcode):
 	axes.grid(True, which='major', color='#999999', zorder=0)
 	plt.scatter(barcode[:,0], barcode[:,1], marker=".", c=barcode[:,2]/2.0, zorder=2)
 	plt.plot([0,inf],[0,inf], lw=1, color="lightgray")
-	plt.show()
 
-def plot_barcode_gant(barcode):
-	print(barcode[barcode != math.inf])
+
+def plot_barcode_gant(barcode, plot):
 	inf = np.max(barcode[barcode != math.inf]) + 1
-	print(inf)
 	markers = ('s', '*', 'x')
 	for idx, row in enumerate(barcode):
 		start,end = row[:2]
 		if row[1] == math.inf: end = inf
-		plt.plot([start,end], [idx, idx], marker=markers[row[2].astype(int)], c='k', lw=1, ms=3)
+		plot.plot([start,end], [idx, idx], marker=markers[row[2].astype(int)], c='k', lw=1, ms=3)
 
-	axes = plt.gca()
+	axes = plot.gca()
 	axes.set_xlim([-0.5, inf - 0.5])
 	axes.set_xticks(range(0,math.ceil(inf),2))
-	plt.show()	
 
+
+def test(): 
+	test_bars = [
+	[(0,2), (3,5)], # No overlap, l=4
+	[(0,4), (2,6)], # Partial overlap, l=4
+	[(0,4), (2,3)], # Full overlap, l=3
+	[(0,2), (0,5)], # l=3
+	[(0,5), (3,5)], # l=3
+	[(1,2), (0,2)], # l=1
+	[(1,4), (0,math.inf)], # l=inf
+	[(1,2), (5,math.inf)], # l=inf
+	[(1,math.inf), (5,math.inf)] # l=inf
+	]
+
+	bar1 = np.zeros([len(test_bars),2])
+	bar2 = np.zeros([len(test_bars) + 5,2])
+	for idx,b in enumerate(test_bars):
+		bar1[idx,:] = b[0]
+		bar2[idx,:] = b[1]
+
+	for idx in range(5):
+		bar2[idx + len(test_bars), :] = [2,4]
+
+	print(bar1)
+	print(bar2)
+
+	print(barcode_diff(bar2, bar1))
+
+
+if __name__ == "__main__":
+	test()

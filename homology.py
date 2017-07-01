@@ -5,7 +5,7 @@ import numpy as np
 import bar_code as bc
 
 
-def process_shape(vertices): 
+def process_shape(vertices, test=False): 
 	"""
 	Takes a set of vertices and returns simplical complex and bar code for persistent homology
 	"""
@@ -14,10 +14,14 @@ def process_shape(vertices):
 	r = 2
 
 	kd_tree = spatial.KDTree(vertices)
-	curve = find_curve(vertices, k, kd_tree)
+	curve, tangents = find_curve(vertices, k, kd_tree)
 	edges = find_edges(vertices, r, kd_tree)
 	ordered_simplices = get_ordered_simplices(vertices, curve, edges)
 	bar_code = bc.get_bar_code(ordered_simplices)
+
+	if test:
+		return ordered_simplices, bar_code, curve, tangents, edges
+
 	return ordered_simplices, bar_code
 
 
@@ -86,7 +90,7 @@ def find_curve(vertices, k, kd_tree):
 	"""
 	find_tangent_partial = partial(find_tangent, k=k, vertices=vertices, kd_tree=kd_tree)
 	(tangents, curve) = np.apply_along_axis(find_tangent_partial, arr=vertices, axis=1).T
-	return curve
+	return curve, tangents
 
 
 def find_tangent(x, k, vertices, kd_tree):
@@ -103,8 +107,7 @@ def find_tangent(x, k, vertices, kd_tree):
 
 
 	# Find tangent
-	data = np.concatenate(([x], neighbors))
-	beta = fitODR(data)
+	beta = fitODR(neighbors)
 	tangent = math.atan(beta[0])
 
 	# Find curve
@@ -123,6 +126,15 @@ def find_tangent(x, k, vertices, kd_tree):
 	return tangent, curve
 
 # ------------------------------------------------------------------------
+
+def fitQuad(data):
+	def f(B, x):
+		return B[0]*x*x + B[1]*x + B[2]
+	quad = odr.Model(f)
+	data = odr.Data(data[:,0], data[:,1])
+	o = odr.ODR(data, quad, beta0=[1,0,0])
+	out = o.run()
+	return out.beta	
 
 def fitODR(data):
 	def f(B, x):

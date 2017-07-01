@@ -6,28 +6,78 @@ import skimage.morphology as mp
 import matplotlib.pyplot as plt
 import homology as hm
 import bar_code as bc
-
-def run(): 
-
-	# Get point cloud
+from copy import deepcopy
 
 
-	sample = 26 # np.random.randint(50)
-	plt.set_cmap('binary')
-	f, ax = plt.subplots(5,3)
+def test_curve():
+	im = get_image('B', 1, size=30)[1]
+	vertices = get_vertices(im)
+	(simplices, bar_code, curve, tangents, edges) = hm.process_shape(vertices, test=True)
+		
+	f, ax = plt.subplots(1,3)
 
-	for sample in range(5):
-		orig, im = get_image('A', sample, size=30)
-		ax[sample][0].imshow(orig)
-		vertices = get_vertices(im)
-		ax[sample][1].scatter(vertices[:,0], vertices[:,1], marker='.')
-		ax[sample][1].invert_yaxis()
-		simplices, bar_code = hm.process_shape(vertices)
-		plot_simplices(simplices, math.inf, vertices, ax[sample][2])
-		ax[sample][2].invert_yaxis()
-
+	ax[0].imshow(im)
+	plt.set_cmap('hot')
+	ax[1].scatter(vertices[:,0], vertices[:,1], marker='.', c=curve)
+	ax[1].set_facecolor("#dddddd")
+	ax[2].plot(curve)
 	plt.show()
 
+
+def do_letter(im, plt = None):
+	vertices = get_vertices(im)
+	(simplices, bar_code) = hm.process_shape(vertices)
+	return bar_code
+
+def run(): 
+	# Get point cloud
+
+	# sample = 26 # np.random.randint(50)
+	# plt.set_cmap('binary')
+	# f, ax = plt.subplots(5,3)
+
+	# for sample in range(5):
+	# 	orig, im = get_image('A', sample, size=30)
+	# 	ax[sample][0].imshow(orig)
+	# 	vertices = get_vertices(im)
+	# 	ax[sample][1].scatter(vertices[:,0], vertices[:,1], marker='.')
+	# 	ax[sample][1].invert_yaxis()
+	# 	simplices, bar_code = hm.process_shape(vertices)
+	# 	plot_simplices(simplices, math.inf, vertices, ax[sample][2])
+	# 	ax[sample][2].invert_yaxis()
+
+	barcodes = []
+	complexes = []
+	images = []
+	for ltr in 'ABCDE':
+		for nmbr in range(5):
+			im = get_image(ltr, nmbr, size=30)[1]
+			vertices = get_vertices(im)
+			compl, bar_code = hm.process_shape(vertices)
+			barcodes.append(bar_code)
+			complexes.append(compl)
+			images.append(compl)
+
+	diff = np.zeros([len(barcodes),len(barcodes)], dtype=float)
+
+	for i, bc1 in enumerate(barcodes):
+		for j, bc2 in enumerate(barcodes):
+			diff[i,j] = bc.barcode_diff(bc1, bc2)
+
+	# for i, bc1 in enumerate(images):
+	# 	for j, bc2 in enumerate(images):
+	# 		diff[i,j] = np.sum(np.abs(bc1 - bc2))
+
+	# print(diff)
+	# print(barcodes[1])
+	# print(barcodes[2])
+	# print(bc.barcode_diff(barcodes[0], barcodes[1]))
+	# return
+	plt.set_cmap('gray')
+	plt.imshow(diff)
+	# plt.figure()
+	# plt.imshow(images[1])
+	plt.show()
 
 	# bc.plot_barcode_gant(P)
 	
@@ -51,7 +101,6 @@ def run():
 			plot_simplices(simplices, idx * 1, vertices, subp)
 
 
-	plt.show()
 
 
 # ---------------------------------------------------------------------------------
