@@ -37,10 +37,10 @@ def remove_pivot_rows(simplex, T, marked, youngest_simplex):
 		d = simplex_add(d, T[i])
 	return d
 
-def get_bar_code(ordered_simplices, degrees = None):
+def get_bar_code(ordered_simplices, degrees = None, degree_values=None):
 	"""
 	ordered_simplices is a 5 column matrix (i, b1, b2, deg, k)
-	degrees is a map from simplex to degree (birth time)
+	degrees is a lookup table from simplex id to degree (birth time)
 
 	a simplex is a flat 5-array
 
@@ -52,9 +52,13 @@ def get_bar_code(ordered_simplices, degrees = None):
 	if degrees is None:
 		degrees = lookup[:,3]
 
+	if degree_values is not None:
+		degrees = degree_values[degrees]
+
+
 	# T is map of (simplex, (idx, set))
 	T = {}
-	L = np.zeros([m_max, 3], dtype=float)
+	L = np.zeros([m_max, 5], dtype=float)
 	N_L = 0
 
 	def youngest_simplex(chain):
@@ -77,13 +81,13 @@ def get_bar_code(ordered_simplices, degrees = None):
 			sigma_i = lookup[youngest_simplex(d),:]
 			k = dim(sigma_i)
 			T[sigma_i[0]] = d
-			L[N_L,:] = [degrees[sigma_i[0]], degrees[simplex[0]], k]
+			L[N_L,:] = [degrees[sigma_i[0]], degrees[simplex[0]], k, sigma_i[0], simplex[0]]
 			N_L += 1
 
 	for simplex_id in marked:
 		if T.get(simplex_id) is None:
 			k = dim(lookup[simplex_id])
-			L[N_L,:] = [degrees[simplex_id], math.inf, k]
+			L[N_L,:] = [degrees[simplex_id], math.inf, k, simplex_id, math.inf]
 			N_L += 1
 
 	out = L[:N_L,:]
@@ -160,13 +164,18 @@ def plot_barcode_scatter(barcode):
 	plt.plot([0,inf],[0,inf], lw=1, color="lightgray")
 
 
-def plot_barcode_gant(barcode, plot):
-	inf = np.max(barcode[barcode != math.inf]) + 1
+def plot_barcode_gant(barcode, plot, annotate=False):
+	inf = np.max(barcode[barcode[:,:3] != math.inf]) + 1
 	markers = ('s', '*', 'x')
 	for idx, row in enumerate(barcode):
 		start,end = row[:2]
 		if row[1] == math.inf: end = inf
 		plot.plot([start,end], [idx, idx], marker=markers[row[2].astype(int)], c='k', lw=1, ms=3)
+		if annotate:
+			plt.annotate("{0}".format(barcode[idx,3]), (start,idx), horizontalalignment='right')
+			plt.annotate("{0}".format(barcode[idx,4]), (end,idx), horizontalalignment='left')
+
+
 
 	axes = plot.gca()
 	axes.set_xlim([-0.5, inf - 0.5])

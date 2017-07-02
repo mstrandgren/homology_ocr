@@ -32,74 +32,32 @@ def do_letter(im, plt = None):
 def run(): 
 	# Get point cloud
 
-	# sample = 26 # np.random.randint(50)
-	# plt.set_cmap('binary')
-	# f, ax = plt.subplots(5,3)
+	N = 16
+	X = .7*np.cos(np.arange(N)*2.0*math.pi/N)
+	Y = np.sin(np.arange(N)*2.0*math.pi/N)
+	vertices = np.array([X,Y]).T
+	(simplices, bar_code, curve, tangents, edges) = hm.process_shape(vertices, test=True)
+	# print(bar_code)
 
-	# for sample in range(5):
-	# 	orig, im = get_image('A', sample, size=30)
-	# 	ax[sample][0].imshow(orig)
-	# 	vertices = get_vertices(im)
-	# 	ax[sample][1].scatter(vertices[:,0], vertices[:,1], marker='.')
-	# 	ax[sample][1].invert_yaxis()
-	# 	simplices, bar_code = hm.process_shape(vertices)
-	# 	plot_simplices(simplices, math.inf, vertices, ax[sample][2])
-	# 	ax[sample][2].invert_yaxis()
-
-	barcodes = []
-	complexes = []
-	images = []
-	for ltr in 'ABCDE':
-		for nmbr in range(5):
-			im = get_image(ltr, nmbr, size=30)[1]
-			vertices = get_vertices(im)
-			compl, bar_code = hm.process_shape(vertices)
-			barcodes.append(bar_code)
-			complexes.append(compl)
-			images.append(compl)
-
-	diff = np.zeros([len(barcodes),len(barcodes)], dtype=float)
-
-	for i, bc1 in enumerate(barcodes):
-		for j, bc2 in enumerate(barcodes):
-			diff[i,j] = bc.barcode_diff(bc1, bc2, inf=1000)
-
-	# for i, bc1 in enumerate(images):
-	# 	for j, bc2 in enumerate(images):
-	# 		diff[i,j] = np.sum(np.abs(bc1 - bc2))
-
-	print(diff)
-	# print(barcodes[1])
-	# print(barcodes[2])
-	# print(bc.barcode_diff(barcodes[0], barcodes[1]))
-	# return
 	plt.set_cmap('gray')
-	plt.imshow(diff)
-	# plt.figure()
-	# plt.imshow(images[1])
+	# ax = plt.gca()
+	# ax.set_facecolor('#ffffaa')
+
+	# plt.scatter(X,Y, marker='.', c=curve)
+	verts_degree = simplices[simplices[:,4] == 0,0:3]
+
+	f, ax = plt.subplots(4,4, sharex=True, sharey=True)
+	for i in range(4):
+		for j in range(4):
+			idx = i*4 + j
+			plot_simplices(simplices, idx, vertices, ax[i][j], annotate=True)
+			ax[i][j].set_title("Curve={0:1.4f}".format(curve[verts_degree[idx,0]]))
+
+	plt.figure()
+	bc.plot_barcode_gant(bar_code, plt, annotate=True)
+
+	plt.tight_layout()
 	plt.show()
-
-	# bc.plot_barcode_gant(P)
-	
-	# Plot result
-
-	def plot_complex():
-		"""
-		Plots the entire complex. Should work for large sets, but it's slow.
-		"""
-		plot_simplices(simplices, math.inf, vertices, plt)
-
-
-	def plot_sequence():
-		"""
-		Plots the filtration in a number of subplots. Works for really small sets
-		"""	
-		f, ax = plt.subplots(3,3, sharex=True, sharey=True)
-		axs = tuple([e for tupl in ax for e in tupl])
-		for idx, subp in enumerate(axs):
-			subp.set_title("t = {0}".format(idx * 1))
-			plot_simplices(simplices, idx * 1, vertices, subp)
-
 
 
 

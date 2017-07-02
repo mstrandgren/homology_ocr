@@ -10,14 +10,14 @@ def process_shape(vertices, test=False):
 	Takes a set of vertices and returns simplical complex and bar code for persistent homology
 	"""
 
-	k = 8
-	r = 2
+	k = 4
+	r = .39
 
 	kd_tree = spatial.KDTree(vertices)
 	curve, tangents = find_curve(vertices, k, kd_tree)
 	edges = find_edges(vertices, r, kd_tree)
-	ordered_simplices = get_ordered_simplices(vertices, curve, edges)
-	bar_code = bc.get_bar_code(ordered_simplices)
+	ordered_simplices, curve_lookup = get_ordered_simplices(vertices, curve, edges)
+	bar_code = bc.get_bar_code(ordered_simplices, degree_values=curve[np.argsort(curve)])
 
 	if test:
 		return ordered_simplices, bar_code, curve, tangents, edges
@@ -40,6 +40,8 @@ def get_ordered_simplices(vertices, curve, edges):
 	# c[:,1:3] = 0 Boundary
 	c[degree,3] = np.arange(curve.size) # Degree
 	# c[0:N_v,4] = 0 Dimenison
+
+	degree_idx = np.argmax([c[edges[:,0],3].T, c[edges[:,1],3].T], axis=0) 
 	c[N_v:,0] = np.arange(N_e) + N_v # Id
 	c[N_v:,1:3] = edges # Boundary
 	c[N_v:,3] = np.amax([c[edges[:,0],3].T, c[edges[:,1],3].T], axis=0) # Degree
@@ -47,8 +49,22 @@ def get_ordered_simplices(vertices, curve, edges):
 
 	dual_sorter = c[:,3] + 1.0j * c[:,4]
 	ordered_simplices = c[np.argsort(dual_sorter), :]
-	return ordered_simplices
 
+	curve_lookup = np.zeros([N_v + N_e], dtype=float)
+	curve_lookup[:N_v] = curve
+	curve_lookup[N_v:] = curve[degree_idx]
+
+	return ordered_simplices, curve_lookup
+
+
+if __name__ == "__main__": 
+	vertices = np.array([[1,0], [2,0], [3,0], [4,0]])
+	edges = np.array([[0,1], [1,2], [2,3]])
+	curve = np.array([5,3,1,3])
+
+
+	os = get_ordered_simplices(vertices, curve, edges)
+	print(os)
 
 # ---------------------------------------------------------------------------------
 
