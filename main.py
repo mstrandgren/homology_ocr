@@ -62,13 +62,13 @@ def run():
 
 	for i, bc1 in enumerate(barcodes):
 		for j, bc2 in enumerate(barcodes):
-			diff[i,j] = bc.barcode_diff(bc1, bc2)
+			diff[i,j] = bc.barcode_diff(bc1, bc2, inf=1000)
 
 	# for i, bc1 in enumerate(images):
 	# 	for j, bc2 in enumerate(images):
 	# 		diff[i,j] = np.sum(np.abs(bc1 - bc2))
 
-	# print(diff)
+	print(diff)
 	# print(barcodes[1])
 	# print(barcodes[2])
 	# print(bc.barcode_diff(barcodes[0], barcodes[1]))

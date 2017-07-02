@@ -1,7 +1,6 @@
 import math
 import operator
 import numpy as np
-from copy import deepcopy
 import matplotlib.pyplot as plt
 from scipy.optimize import linear_sum_assignment
 
