@@ -94,7 +94,7 @@ def get_bar_code(ordered_simplices, degrees = None, degree_values=None):
 
 # ------------------------------------------------------------------------
 	
-def barcode_diff(bar1, bar2, inf = None):
+def bar_code_diff(bar1, bar2, inf = None):
 	"""	
 	From "A Barcode Shape Descriptor for Curve Point Cloud Data", 2.4
 
@@ -135,6 +135,7 @@ def barcode_diff(bar1, bar2, inf = None):
 	partial = np.abs(x - y)
 	result[is_partial] = partial[is_partial]
 
+	print(result.shape)
 	i,j = linear_sum_assignment(result)
 	nonmatched = list(set(range(result.shape[1])).difference(set(j)))
 	matched_sum = np.sum(result[i,j])
@@ -172,8 +173,8 @@ def plot_barcode_gant(barcode, plt, annotate=False):
 		if row[1] == math.inf: end = inf
 		plt.plot([start,end], [idx, idx], marker=markers[row[2].astype(int)], c='k', lw=1, ms=3)
 		if annotate:
-			plt.annotate("{0}".format(barcode[idx,3]), (start,idx), horizontalalignment='right')
-			plt.annotate("{0}".format(barcode[idx,4]), (end,idx), horizontalalignment='left')
+			plt.annotate("{0:4.0f}".format(barcode[idx,3]), (start,idx), horizontalalignment='right')
+			plt.annotate("{0:4.0f}".format(barcode[idx,4]), (end,idx), horizontalalignment='left')
 
 
 	try: 

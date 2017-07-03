@@ -11,97 +11,31 @@ from scipy import odr, spatial
 import homology as hm
 import bar_code as bc
 from test_plots import *
-import man_data as md
+from man_data import data as manual_data
 
-from time import time
+from complex_creator import draw_complex
 
 
 
 def run(): 
+	d1 = manual_data['D']
+	v1 = np.array(d1['vertices'])
+	e1 = np.array(d1['edges'])
 
-	_,_,im = get_image('B', 1)
+	d2 = manual_data['O']
+	v2 = np.array(d2['vertices'])
+	e2 = np.array(d2['edges'])
 
-	fig = plt.figure()
-	# plt.imshow(im)
+	plot_difference((v1,v2), (e1, e2), plt)
 
-	points = []
+	# plot_filtration(vertices, edges)
+	# plt.figure()
+	# plot_bar_code(vertices, edges)
 
-
-	dragging = False
-	start = 0
-	end = 0
-	lastptime = 0
-	p = None
-
-	def dragged(event):
-		nonlocal dragging, lastptime, p
-		if dragging:
-			# newp = [event.xdata, event.ydata]
-			# dist = np.linalg.norm(np.array(p) - np.array(newp))
-			dt = time() - lastptime
-			if p is not None:
-				points.append(p)
-				p = None
-			if dt > .1:
-				p = [event.xdata, event.ydata]
-				points.append(p)
-				lastptime = time()
-
-
-	def clicked(event):
-		nonlocal dragging, lastptime, points, start, p
-		if event.button == 3:
-			plt.cla()
-			plt.xlim(-1,1)
-			plt.ylim(-1,1)
-			plt.draw()
-			points = []
-			return
-
-		p = [event.xdata, event.ydata]
-		dragging = True
-		start = time()
-		lastptime = time()
-
-
-	def released(event):
-		nonlocal dragging, lastptime, start
-		dragging = False
-		
-		dt = time() - start
-
-		if dt < .2:
-			# TODO: add edge
-			return
-		else:
-			p = np.array(points)
-			if p.size == 0: return
-			N = p.shape[0]
-			edges = np.array([np.arange(N), np.append(np.arange(N-1)+1,0)])
-			plt.scatter(p[:,0], p[:,1], marker='+')
-			for edge in edges:
-				plt.plot(p[edge,0], p[edge,1])
-
-		plt.draw()
-
-
-	fig.canvas.mpl_connect('button_press_event', clicked)
-	fig.canvas.mpl_connect('button_release_event', released)
-	fig.canvas.mpl_connect('motion_notify_event', dragged)	
-
-	plt.xlim(-1,1)
-	plt.ylim(-1,1)
-	# mark_vertices('B', 3, 4)
-	# mark_edges('B', 3, 4, md.indices)
-	plt.show()
-	return
-	# vertices = get_ellipse(N = 32)	
-	# vertices2 = get_image('O', 1, size = 10)[0]
-
-	N = vertices.shape[0]
-	k = int(N / 4)
-	r = .3
-	w = 3
+	# N = vertices.shape[0]
+	# k = int(N / 4)
+	# r = .3
+	# w = 3
 
 	# print(vertices)
 

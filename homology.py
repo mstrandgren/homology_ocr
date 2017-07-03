@@ -19,19 +19,24 @@ def test_edges(vertices, k=4, r=.6, w=.5):
 	edges = find_edges(tangent_space)
 	return edges
 
-def test_filtration(vertices, k=4, r=.6, w=.5):
+
+def test_filtration(vertices, edges = None, k=4, r=.6, w=.5):
 	tangent_space, tangents, curve = get_tangent_space(vertices, k, r, w)
-	edges = find_edges(tangent_space)
+	if edges is None:
+		edges = find_edges(tangent_space)
 
 	ordered_simplices, _ = get_ordered_simplices(vertices, curve, edges)
 	return ordered_simplices, curve
 
-def test_bar_code(vertices, k=4, r=.6, w=.5):
+
+def test_bar_code(vertices, edges = None, k=4, r=.6, w=.5):
 	tangent_space, tangents, curve = get_tangent_space(vertices, k, r, w)
-	edges = find_edges(tangent_space)
+	if edges is None:
+		edges = find_edges(tangent_space)
 	ordered_simplices, curve_lookup = get_ordered_simplices(vertices, curve, edges)
 	bar_code = bc.get_bar_code(ordered_simplices, degree_values=curve[np.argsort(curve)])
 	return bar_code, ordered_simplices
+
 
 def process_shape(vertices, k=4, r=.6, w=.5): 
 	"""

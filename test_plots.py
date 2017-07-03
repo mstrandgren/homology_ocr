@@ -8,6 +8,7 @@ import bar_code as bc
 def plot_vertices(vertices, plt = plt):
 	plt.scatter(vertices[:,0], vertices[:,1], marker='.')
 
+
 def plot_tangent_space(vertices, plt = plt, k=4, r=.6, w=.5, annotate = False):
 	tangent_space, tangents, _ = hm.get_tangent_space(vertices, k = k, r = r, w = w, double=True)
 
@@ -49,26 +50,40 @@ def plot_curve_color(vertices, plt = plt, k = 4, r = .6, w = .5):
 	set_limits(1.1, plt)
 
 
-def plot_filtration(vertices, plt = plt, k=4, r=.6, w=.5): 
-	simplices, curve = hm.test_filtration(vertices, k = k, r = r, w = w)
+def plot_filtration(vertices, edges = None, plt = plt, k=4, r=.6, w=.5): 
+	simplices, curve = hm.test_filtration(vertices, edges, k = k, r = r, w = w)
 	f, ax = plt.subplots(4,4, sharex=True, sharey=True)
+	max_degree = np.max(simplices[:,3])
+	degree_step = math.ceil(max_degree/16.0)
 	verts_degree = simplices[simplices[:,4] == 0,0:3]
 	for i in range(4):
 		for j in range(4):
-			idx = i*4 + j
-			plot_simplices(simplices, idx, vertices, ax[i][j], annotate=True)
-			ax[i][j].set_title("Curve={0:1.4f}".format(curve[verts_degree[idx,0]]))
+			idx = i*5 + j
+			deg = min(idx * degree_step, max_degree)
+			plot_simplices(simplices, deg, vertices, ax[i][j], annotate = False)
+
+			ax[i][j].set_title("Curve={0:1.4f}".format(curve[verts_degree[deg,0]]))
 
 	set_limits(1.1, plt)
 
 
-def plot_bar_code(vertices, plt = plt, k=4, r=.6, w=.5):
-	bar_code, _ = hm.test_bar_code(vertices, k = k, r = r, w = w)
-	bc.plot_barcode_gant(bar_code, plt = plt, annotate = True)
+def plot_bar_code(vertices, edges = None, plt = plt, k=4, r=.6, w=.5):
+	bar_code, _ = hm.test_bar_code(vertices, edges, k = k, r = r, w = w)
+	bc.plot_barcode_gant(bar_code, plt = plt, annotate = False)
+
+
+def plot_difference(vertices, edges = None, plt = plt, k=4, r=.6, w=.5):
+	bar_codes = [0] * len(vertices)
+	for idx, v in enumerate(vertices): 
+		if edges is not None: _edges = edges[idx]
+		else: _edges = None
+		bar_codes[idx], _ = hm.test_bar_code(vertices[0], _edges, k = k, r = r, w = w)
+	diff = bc.bar_code_diff(bar_codes[0], bar_codes[1], inf = 1e14)
+	print(diff)
 
 # ------------------------------------------------------------------------
 
-def plot_simplices(simplices, degree, vertices, plt, annotate=False):
+def plot_simplices(simplices, degree, vertices, plt, annotate = False):
 	np.apply_along_axis(plot_simplex, 
 		arr=simplices[np.argwhere(simplices[:,3]<=degree).flatten(),:], 
 		axis=1, 
