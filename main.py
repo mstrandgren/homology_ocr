@@ -1,20 +1,101 @@
 
 import math
 from scipy import misc, ndimage
+from functools import partial
 import numpy as np
 import skimage.morphology as mp
 import matplotlib.pyplot as plt
+from copy import deepcopy
+from scipy import odr, spatial
+
 import homology as hm
 import bar_code as bc
-from copy import deepcopy
 from test_plots import *
-from scipy import odr, spatial
+import man_data as md
+
+from time import time
+
 
 
 def run(): 
 
+	_,_,im = get_image('B', 1)
+
+	fig = plt.figure()
+	# plt.imshow(im)
+
+	points = []
+
+
+	dragging = False
+	start = 0
+	end = 0
+	lastptime = 0
+	p = None
+
+	def dragged(event):
+		nonlocal dragging, lastptime, p
+		if dragging:
+			# newp = [event.xdata, event.ydata]
+			# dist = np.linalg.norm(np.array(p) - np.array(newp))
+			dt = time() - lastptime
+			if p is not None:
+				points.append(p)
+				p = None
+			if dt > .1:
+				p = [event.xdata, event.ydata]
+				points.append(p)
+				lastptime = time()
+
+
+	def clicked(event):
+		nonlocal dragging, lastptime, points, start, p
+		if event.button == 3:
+			plt.cla()
+			plt.xlim(-1,1)
+			plt.ylim(-1,1)
+			plt.draw()
+			points = []
+			return
+
+		p = [event.xdata, event.ydata]
+		dragging = True
+		start = time()
+		lastptime = time()
+
+
+	def released(event):
+		nonlocal dragging, lastptime, start
+		dragging = False
+		
+		dt = time() - start
+
+		if dt < .2:
+			# TODO: add edge
+			return
+		else:
+			p = np.array(points)
+			if p.size == 0: return
+			N = p.shape[0]
+			edges = np.array([np.arange(N), np.append(np.arange(N-1)+1,0)])
+			plt.scatter(p[:,0], p[:,1], marker='+')
+			for edge in edges:
+				plt.plot(p[edge,0], p[edge,1])
+
+		plt.draw()
+
+
+	fig.canvas.mpl_connect('button_press_event', clicked)
+	fig.canvas.mpl_connect('button_release_event', released)
+	fig.canvas.mpl_connect('motion_notify_event', dragged)	
+
+	plt.xlim(-1,1)
+	plt.ylim(-1,1)
+	# mark_vertices('B', 3, 4)
+	# mark_edges('B', 3, 4, md.indices)
+	plt.show()
+	return
 	# vertices = get_ellipse(N = 32)	
-	vertices = get_image('A', 1, size = 30)[0]
 	# vertices2 = get_image('O', 1, size = 10)[0]
 
 	N = vertices.shape[0]
@@ -23,45 +104,6 @@ def run():
 	w = 3
 
 	# print(vertices)
-	kd_tree = spatial.KDTree(vertices)
-	
-	x = vertices[0,:]
-	visited = np.array([0])
-	marked = set([(0,0)])
-
-
-	def distances(i, j):
-		return np.linalg.norm(vertices[j,:] - vertices[i,:])
-
-
-	for i in range(100000):
-		# print("i={0}, x={1}".format(i, x))
-		neighbors = np.array(kd_tree.query_ball_point(x, r))
-		new_idx = np.logical_not(np.in1d(neighbors, visited))
-		# print(new_idx)
-		new_neighbors = neighbors[new_idx]
-		# print(new_neighbors)
-
-		if new_neighbors.size == 0:
-			print("breaking")
-			break
-
-		new_distances = np.linalg.norm(vertices[new_neighbors,:] - x, axis=1)
-
-		# print(new_distances)
-		visited = np.append(visited, new_neighbors)
-		next_idx = new_neighbors[np.argmax(new_distances)]
-		# print("New idx = {0}".format(next_idx))
-		marked.add((next_idx, i + 1))
-		x = vertices[next_idx, :]
-
-
-	plt.scatter(vertices[:,0], vertices[:,1], marker='.')
-
-	for xi,i in marked:
-		x = vertices[xi,:]
-		plt.annotate("{0}".format(i), (x[0], x[1]))
-
 
 	# plot_edges(vertices, k = k, r = r, w = w)
 	# plt.figure()
@@ -78,36 +120,6 @@ def run():
 	plt.show()
 	return
 
-	tangent_space, tangents, _ = hm.get_tangent_space(vertices, w = 8)
-
-
-	# (simplices, bar_code, curve, tangents, edges) = hm.process_shape(vertices, test=True)
-	# print(bar_code)
-
-	plt.set_cmap('gray')
-	# plot_simplices(simplices, math.inf, vertices, plt, annotate=True)
-
-	for idx, x in enumerate(tangent_space): 
-		plt.plot([x[0], x[0] + x[2]], [x[1], x[1] + x[3]])
-		plt.annotate("{0:1.2f}".format(tangents[idx]/math.pi), (x[0], x[1]))
-	# ax = plt.gca()
-	# ax.set_facecolor('#ffffaa')
-
-	plt.scatter(vertices[:,0],vertices[:,1], marker='.')
-	# verts_degree = simplices[simplices[:,4] == 0,0:3]
-
-	# f, ax = plt.subplots(4,4, sharex=True, sharey=True)
-	# for i in range(4):
-	# 	for j in range(4):
-	# 		idx = i*4 + j
-	# 		plot_simplices(simplices, idx, vertices, ax[i][j], annotate=True)
-	# 		ax[i][j].set_title("Curve={0:1.4f}".format(curve[verts_degree[idx,0]]))
-
-	# plt.figure()
-	# bc.plot_barcode_gant(bar_code, plt, annotate=True)
-
-	plt.tight_layout()
-	plt.show()
 
 # ---------------------------------------------------------------------------------
 
@@ -139,5 +151,7 @@ def get_image(letter, number, size=50):
 	vertices = np.flip(np.array(np.nonzero(image)).T, axis=1)
 	vertices = vertices * 2.0 / np.max(vertices) - 1
 	return vertices, image, original
+
+
 
 run()
