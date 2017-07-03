@@ -69,6 +69,7 @@ def plot_filtration(vertices, edges = None, plt = plt, k=4, r=.6, w=.5):
 
 def plot_bar_code(vertices, edges = None, plt = plt, k=4, r=.6, w=.5):
 	bar_code, _ = hm.test_bar_code(vertices, edges, k = k, r = r, w = w)
+	print(bar_code)
 	bc.plot_barcode_gant(bar_code, plt = plt, annotate = False)
 
 

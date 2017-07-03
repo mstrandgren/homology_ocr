@@ -135,14 +135,16 @@ def bar_code_diff(bar1, bar2, inf = None):
 	partial = np.abs(x - y)
 	result[is_partial] = partial[is_partial]
 
-	print(result.shape)
+	np.set_printoptions(suppress=True)
+	np.set_printoptions(precision=3, linewidth = 150)
+	print(result)
 	i,j = linear_sum_assignment(result)
 	nonmatched = list(set(range(result.shape[1])).difference(set(j)))
 	matched_sum = np.sum(result[i,j])
 	nonmatched_sum = np.sum(result[:,nonmatched])
-	# print(result)
-	# print(matched_sum)
-	# print(nonmatched_sum)
+	print(i)
+	print(matched_sum)
+	print(nonmatched_sum)
 	return matched_sum + nonmatched_sum
 
 

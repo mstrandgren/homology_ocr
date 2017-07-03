@@ -18,19 +18,31 @@ from complex_creator import draw_complex
 
 
 def run(): 
-	d1 = manual_data['D']
-	v1 = np.array(d1['vertices'])
-	e1 = np.array(d1['edges'])
+	# d1 = manual_data['D']
+	# v1 = np.array(d1['vertices'])
+	# e1 = np.array(d1['edges'])
 
-	d2 = manual_data['O']
-	v2 = np.array(d2['vertices'])
-	e2 = np.array(d2['edges'])
+	# d2 = manual_data['O']
+	# v2 = np.array(d2['vertices'])
+	# e2 = np.array(d2['edges'])
 
-	plot_difference((v1,v2), (e1, e2), plt)
+	N = 8
+	M = 2
+	vertices = [0] * M
+	edges = [0] * M
+
+	for m in range(M):
+		vertices[m] = get_ellipse(N, .5 - .1 * m)
+		edges[m] = np.array([np.arange(N), np.append(np.arange(N-1) + 1, 0)]).T
+
+	# plot_filtration(vertices[0], edges[0])
+	plot_difference(vertices, edges, plt)
 
 	# plot_filtration(vertices, edges)
 	# plt.figure()
-	# plot_bar_code(vertices, edges)
+	f, ax = plt.subplots(1,2)
+	plot_bar_code(vertices[0], edges[0], plt=ax[0])
+	plot_bar_code(vertices[1], edges[1], plt=ax[1])
 
 	# N = vertices.shape[0]
 	# k = int(N / 4)
