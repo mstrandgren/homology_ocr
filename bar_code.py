@@ -165,7 +165,8 @@ def plot_barcode_scatter(barcode):
 
 
 def plot_barcode_gant(barcode, plot, annotate=False):
-	inf = np.max(barcode[barcode[:,:3] != math.inf]) + 1
+	bars = barcode[:,:3]
+	inf = np.max(bars[bars != math.inf]) + 1
 	markers = ('s', '*', 'x')
 	for idx, row in enumerate(barcode):
 		start,end = row[:2]
