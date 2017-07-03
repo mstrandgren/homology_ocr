@@ -5,22 +5,44 @@ import numpy as np
 import bar_code as bc
 
 
-def process_shape(vertices, test=False): 
+def get_tangent_space(vertices, k = 4, r = .6, w = .5, double = True): 
+	kd_tree_2d = spatial.KDTree(vertices)
+	curve, tangents = find_curve(vertices, k, kd_tree_2d)
+	if double: factor = 2
+	else: factor = 1
+	tangent_space = np.concatenate([vertices / r, np.array([(w / r) * np.cos(factor * tangents), (w / r) * np.sin(factor * tangents)]).T], axis=1)
+	return tangent_space, tangents, curve
+
+
+def test_edges(vertices, k=4, r=.6, w=.5):
+	tangent_space, tangents, curve = get_tangent_space(vertices, k, r, w)
+	edges = find_edges(tangent_space)
+	return edges
+
+def test_filtration(vertices, k=4, r=.6, w=.5):
+	tangent_space, tangents, curve = get_tangent_space(vertices, k, r, w)
+	edges = find_edges(tangent_space)
+
+	ordered_simplices, _ = get_ordered_simplices(vertices, curve, edges)
+	return ordered_simplices, curve
+
+def test_bar_code(vertices, k=4, r=.6, w=.5):
+	tangent_space, tangents, curve = get_tangent_space(vertices, k, r, w)
+	edges = find_edges(tangent_space)
+	ordered_simplices, curve_lookup = get_ordered_simplices(vertices, curve, edges)
+	bar_code = bc.get_bar_code(ordered_simplices, degree_values=curve[np.argsort(curve)])
+	return bar_code, ordered_simplices
+
+def process_shape(vertices, k=4, r=.6, w=.5): 
 	"""
 	Takes a set of vertices and returns simplical complex and bar code for persistent homology
 	"""
 
-	k = 4
-	r = .39
+	tangent_space, tangents, curve = get_tangent_space(vertices, k, r, w)
+	edges = find_edges(tangent_space)
 
-	kd_tree = spatial.KDTree(vertices)
-	curve, tangents = find_curve(vertices, k, kd_tree)
-	edges = find_edges(vertices, r, kd_tree)
 	ordered_simplices, curve_lookup = get_ordered_simplices(vertices, curve, edges)
 	bar_code = bc.get_bar_code(ordered_simplices, degree_values=curve[np.argsort(curve)])
-
-	if test:
-		return ordered_simplices, bar_code, curve, tangents, edges
 
 	return ordered_simplices, bar_code
 
@@ -68,12 +90,14 @@ if __name__ == "__main__":
 
 # ---------------------------------------------------------------------------------
 
-def find_edges(vertices, r, kd_tree):
+def find_edges(tangent_space):
 	"""
 	returns Nx2 matrix, array elements are indices of the vertices that bound the edge
 	"""
-	N = vertices.shape[0]
-	find_edges_partial = partial(find_edges_for_point, r=r, vertices=vertices, kd_tree=kd_tree)
+	kd_tree_4d = spatial.KDTree(tangent_space)
+
+	N = tangent_space.shape[0]
+	find_edges_partial = partial(find_edges_for_point, points=tangent_space, kd_tree=kd_tree_4d)
 	find_edges_array = np.vectorize(find_edges_partial, otypes=[np.ndarray])
 	all_edges = np.concatenate(find_edges_array(np.arange(0,N)), axis=1).T
 	edges = remove_duplicate_edges(all_edges)
@@ -89,9 +113,9 @@ def remove_duplicate_edges(edges):
 	return edges[unique_idx, :]
 
 
-def find_edges_for_point(idx, r, vertices, kd_tree):
-	x = vertices[idx,:]
-	neighbors_idx = np.array(kd_tree.query_ball_point(x, r))
+def find_edges_for_point(idx, points, kd_tree):
+	x = points[idx,:]
+	neighbors_idx = np.array(kd_tree.query_ball_point(x, 1))
 	neighbors_idx = np.delete(neighbors_idx, np.argwhere(neighbors_idx==idx))
 	N = neighbors_idx.shape[0]
 	return np.array([np.ones(N).astype(int) * idx, neighbors_idx.T])

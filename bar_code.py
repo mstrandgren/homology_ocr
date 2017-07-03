@@ -1,7 +1,6 @@
 import math
 import operator
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy.optimize import linear_sum_assignment
 
 def dim(simplex):
@@ -164,23 +163,27 @@ def plot_barcode_scatter(barcode):
 	plt.plot([0,inf],[0,inf], lw=1, color="lightgray")
 
 
-def plot_barcode_gant(barcode, plot, annotate=False):
+def plot_barcode_gant(barcode, plt, annotate=False):
 	bars = barcode[:,:3]
 	inf = np.max(bars[bars != math.inf]) + 1
 	markers = ('s', '*', 'x')
 	for idx, row in enumerate(barcode):
 		start,end = row[:2]
 		if row[1] == math.inf: end = inf
-		plot.plot([start,end], [idx, idx], marker=markers[row[2].astype(int)], c='k', lw=1, ms=3)
+		plt.plot([start,end], [idx, idx], marker=markers[row[2].astype(int)], c='k', lw=1, ms=3)
 		if annotate:
 			plt.annotate("{0}".format(barcode[idx,3]), (start,idx), horizontalalignment='right')
 			plt.annotate("{0}".format(barcode[idx,4]), (end,idx), horizontalalignment='left')
 
 
+	try: 
+		axes = plt.gca()
+		axes.set_xlim([-0.5, inf - 0.5])
+		axes.set_xticks(range(0,math.ceil(inf),2))
+	except: 
+		plt.set_xlim([-0.5, inf - 0.5])
+		plt.set_xticks(range(0,math.ceil(inf),2))
 
-	axes = plot.gca()
-	axes.set_xlim([-0.5, inf - 0.5])
-	axes.set_xticks(range(0,math.ceil(inf),2))
 
 
 def test(): 
