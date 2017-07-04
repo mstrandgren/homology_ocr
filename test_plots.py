@@ -45,8 +45,9 @@ def plot_curve(vertices, plt = plt, k = 4, r = .6, w = .5):
 
 def plot_curve_color(vertices, plt = plt, k = 4, r = .6, w = .5):
 	tangent_space, tangents, curve = hm.get_tangent_space(vertices, k = k, r = r, w = w, double=False)
-	plt.set_cmap('plasma')
-	plt.scatter(vertices[:,0], vertices[:,1], marker = '.', c=curve, s=200)
+	
+	# plt.set_cmap('plasma')
+	plt.scatter(vertices[:,0], vertices[:,1], marker = '.', c=curve, cmap='plasma', s=200)
 	set_limits(1.1, plt)
 
 
@@ -69,18 +70,23 @@ def plot_filtration(vertices, edges = None, plt = plt, k=4, r=.6, w=.5):
 
 def plot_bar_code(vertices, edges = None, plt = plt, k=4, r=.6, w=.5):
 	bar_code, _ = hm.test_bar_code(vertices, edges, k = k, r = r, w = w)
-	print(bar_code)
 	bc.plot_barcode_gant(bar_code, plt = plt, annotate = False)
 
 
-def plot_difference(vertices, edges = None, plt = plt, k=4, r=.6, w=.5):
-	bar_codes = [0] * len(vertices)
-	for idx, v in enumerate(vertices): 
-		if edges is not None: _edges = edges[idx]
-		else: _edges = None
-		bar_codes[idx], _ = hm.test_bar_code(vertices[0], _edges, k = k, r = r, w = w)
-	diff = bc.bar_code_diff(bar_codes[0], bar_codes[1], inf = 1e14)
-	print(diff)
+def plot_difference(vertices, edges = None, plt = plt, k=4, r=.6, w=.5, inf=1e14):
+	M = len(vertices)
+	diffs = np.zeros([M,M])
+	for i in range(M):
+		for j in range(M):
+			if edges is not None: 
+				bc1 = hm.test_bar_code(vertices[i], edges[i], k = k, r = r, w = w)[0]
+				bc2 = hm.test_bar_code(vertices[j], edges[j], k = k, r = r, w = w)[0]
+			else:
+				bc1 = hm.test_bar_code(vertices[i], k = k, r = r, w = w)[0]
+				bc2 = hm.test_bar_code(vertices[j], k = k, r = r, w = w)[0]
+			diffs[i,j] = bc.bar_code_diff(bc1, bc2, inf = inf)
+
+	plt.imshow(diffs, cmap='gray')
 
 # ------------------------------------------------------------------------
 

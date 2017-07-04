@@ -42,7 +42,7 @@ def get_bar_code(ordered_simplices, degrees = None, degree_values=None):
 	degrees is a lookup table from simplex id to degree (birth time)
 
 	a simplex is a flat 5-array
-
+	
 	"""
 	m_max = ordered_simplices.shape[0]
 	k_max = 2
@@ -107,16 +107,24 @@ def bar_code_diff(bar1, bar2, inf = None):
 		bmax = max(np.max(bar1[bar1!=math.inf]), np.max(bar2[bar2!=math.inf]))
 		inf = bmax * 2
 
-
 	bar1[bar1==math.inf] = inf
 	bar2[bar2==math.inf] = inf
 
-	l1, l2 = bar1.shape[0], bar2.shape[0]
-	if l1 > l2:
-		bar1, bar2 = bar2, bar1
-
+	# Bar lengths
 	l1 = bar1[:,1] - bar1[:,0]
 	l2 = bar2[:,1] - bar2[:,0]
+
+	# Remove zero-length bar (no impact on result)
+	bar1 = bar1[l1 > 0, :]
+	bar2 = bar2[l2 > 0, :]
+	l1 = l1[np.nonzero(l1)]
+	l2 = l2[np.nonzero(l2)]
+
+	# bar1 is the smaller barcode
+	if bar1.shape[0] > bar2.shape[0]:
+		bar1, bar2 = bar2, bar1
+		l1, l2 = l2, l1
+	
 	l_max = np.maximum.outer(l1,l2)
 
 	x = np.add.outer(bar1[:,1], -bar2[:,0])
@@ -135,16 +143,10 @@ def bar_code_diff(bar1, bar2, inf = None):
 	partial = np.abs(x - y)
 	result[is_partial] = partial[is_partial]
 
-	np.set_printoptions(suppress=True)
-	np.set_printoptions(precision=3, linewidth = 150)
-	print(result)
 	i,j = linear_sum_assignment(result)
 	nonmatched = list(set(range(result.shape[1])).difference(set(j)))
 	matched_sum = np.sum(result[i,j])
-	nonmatched_sum = np.sum(result[:,nonmatched])
-	print(i)
-	print(matched_sum)
-	print(nonmatched_sum)
+	nonmatched_sum = np.sum(l2[nonmatched])
 	return matched_sum + nonmatched_sum
 
 
@@ -181,11 +183,12 @@ def plot_barcode_gant(barcode, plt, annotate=False):
 
 	try: 
 		axes = plt.gca()
-		axes.set_xlim([-0.5, inf - 0.5])
-		axes.set_xticks(range(0,math.ceil(inf),2))
+		axes.set_xlim([0, 3])
+		axes.set_xticks(range(0,3))
 	except: 
-		plt.set_xlim([-0.5, inf - 0.5])
-		plt.set_xticks(range(0,math.ceil(inf),2))
+		plt.set_xlim([0, 3])
+		plt.set_xticks(range(0,3))
+
 
 
 
