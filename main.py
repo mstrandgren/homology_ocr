@@ -16,6 +16,10 @@ from man_data import data as manual_data
 from complex_creator import draw_complex
 
 
+# AD
+# BOPQR
+# CEFGHIJKLMNSTUVXYZ
+
 
 def run(): 
 	# d1 = manual_data['D']
@@ -27,26 +31,30 @@ def run():
 	# e2 = np.array(d2['edges'])
 
 	N = 32
-	M = 6
-	vertices = [0] * M
-	edges = [0] * M
+	K = 2
+	M = 5
 
-	for m in range(M):
-		vertices[m] = get_ellipse(N, .8 - .1 * m)
-		edges[m] = np.array([np.arange(N), np.append(np.arange(N-1) + 1, 0)]).T
+	vertices = [0] * (M * K)
+	edges = [0] * (M * K)
+
+	for k, l in enumerate('AB'):
+		for m in range(M):
+			idx = k*M + m
+			d = manual_data[l][m]
+			vertices[idx] = np.array(d['vertices'])
+			edges[idx] = np.array(d['edges'])
 
 	# plot_filtration(vertices[0], edges[0])
-	plt.set_cmap('gray')
 	plot_difference(vertices, edges, plt)
 	# hm.test_bar_code(vertices[1], edges[1])
 
 	# plot_filtration(vertices, edges)
 	# plt.figure()
 
-	f, ax = plt.subplots(2,M)
-	for m in range(M):
-		plot_curve_color(vertices[m], plt=ax[0,m])
-		plot_bar_code(vertices[m], edges[m], plt=ax[1,m])
+	# f, ax = plt.subplots(2,M)
+	# for m in range(M):
+	# 	plot_curve_color(vertices[m], plt=ax[0,m])
+	# 	plot_bar_code(vertices[m], edges[m], plt=ax[1,m])
 
 	# N = vertices.shape[0]
 	# k = int(N / 4)
