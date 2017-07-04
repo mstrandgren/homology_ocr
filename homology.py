@@ -114,7 +114,7 @@ def remove_duplicate_edges(edges):
 	"""
 	edges is a column array
 	"""
-	c = to_complex(np.sort(edges, axis=1).T)
+	c = to_complex(np.sort(edges, axis=1))
 	unique_idx = np.unique(c, return_index=True)[1]
 	return edges[unique_idx, :]
 
@@ -210,8 +210,8 @@ def fitODR(data):
 # ------------------------------------------------------------------------
 
 def to_complex(v):
-	if v.shape[0] == 2: x, y = v
-	else: x, y = v.T
+	# Expects column matrix Nx2
+	x, y = v.T
 	return x + y * 1.0j		
 
 def to_real(c, dtype = int): 

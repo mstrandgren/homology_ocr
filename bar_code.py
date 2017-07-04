@@ -72,6 +72,7 @@ def get_bar_code(ordered_simplices, degrees = None, degree_values=None):
 	# Set of indices (int) of marked simplices
 	marked = set()
 
+
 	for simplex in ordered_simplices:
 		d = remove_pivot_rows(simplex, T, marked, youngest_simplex)
 		if len(d) == 0:
@@ -183,11 +184,11 @@ def plot_barcode_gant(barcode, plt, annotate=False):
 
 	try: 
 		axes = plt.gca()
-		axes.set_xlim([0, 3])
-		axes.set_xticks(range(0,3))
+		axes.set_xlim([-0.1 * inf, inf - 0.5])
+		axes.set_xticks(range(0,math.ceil(inf),2))
 	except: 
-		plt.set_xlim([0, 3])
-		plt.set_xticks(range(0,3))
+		plt.set_xlim([-0.1 * inf, inf - 0.5])
+		plt.set_xticks(range(0,math.ceil(inf),2))
 
 
 

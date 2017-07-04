@@ -55,7 +55,7 @@ def plot_curve_color(vertices, plt = plt, k = 4, r = .6, w = .5):
 	set_limits(1.1, plt)
 
 
-def plot_filtration(vertices, edges = None, plt = plt, k=4, r=.6, w=.5): 
+def plot_filtration(vertices, edges = None, plt = plt, k=4, r=.6, w=.5, annotate = False): 
 	simplices, curve = hm.test_filtration(vertices, edges, k = k, r = r, w = w)
 	f, ax = plt.subplots(4,4, sharex=True, sharey=True)
 	max_degree = np.max(simplices[:,3])
@@ -65,16 +65,17 @@ def plot_filtration(vertices, edges = None, plt = plt, k=4, r=.6, w=.5):
 		for j in range(4):
 			idx = i*5 + j
 			deg = min(idx * degree_step, max_degree)
-			plot_simplices(simplices, deg, vertices, ax[i][j], annotate = False)
+			plot_simplices(simplices, deg, vertices, ax[i][j], annotate = annotate)
 
 			ax[i][j].set_title("Curve={0:1.4f}".format(curve[verts_degree[deg,0]]))
 
 	set_limits(1.1, plt)
 
 
-def plot_bar_code(vertices, edges = None, plt = plt, k=4, r=.6, w=.5):
+def plot_bar_code(vertices, edges = None, plt = plt, k=4, r=.6, w=.5, annotate = False):
 	bar_code, _ = hm.test_bar_code(vertices, edges, k = k, r = r, w = w)
-	bc.plot_barcode_gant(bar_code, plt = plt, annotate = False)
+	np.set_printoptions(precision=3, suppress=True)
+	bc.plot_barcode_gant(bar_code, plt = plt, annotate = annotate)
 
 
 def plot_difference(vertices, edges = None, plt = plt, k=4, r=.6, w=.5, inf=1e14):
@@ -95,7 +96,7 @@ def plot_difference(vertices, edges = None, plt = plt, k=4, r=.6, w=.5, inf=1e14
 		for j in range(M):
 			diffs[i,j] = bc.bar_code_diff(barcodes[i], barcodes[j], inf = inf)
 
-	dmax = np.max(diffs[diffs < inf/100]) * 2
+	dmax = np.max(diffs[diffs < inf/100]) * 1.1
 	diffs[diffs > inf/100] = dmax
 	plt.imshow(diffs, cmap='gray')
 

@@ -21,10 +21,63 @@ from complex_creator import draw_complex
 # CEFGHIJKLMNSTUVXYZ
 
 
+def test_triangulation():
+	im_size = 30
+	k = 20
+	r = .2 # 2 * 1.01 * math.sqrt(2) / im_size
+	w = .5
+	vertices = get_image2('A', 0, im_size)[0]
+	# plot_curve_color(vertices,k = k, r = r, w = w)
+	plot_edges(vertices, k = k, r = r, w = w, annotate = False)
+	plt.show()
+
+
+def run_manual():
+	letters = 'ABD'
+	M = 5
+	K = len(letters)
+	vertices = [0] * (M * K)
+	edges = [0] * (M * K)
+
+	for k, l in enumerate(letters):
+		for m in range(M): 
+			idx = k * M + m
+			vertices[idx] = np.array(manual_data[l][m]['vertices'])
+			edges[idx] = np.array(manual_data[l][m]['edges'])
+
+	k = 20
+	r = 1
+	w = 0
+
+	plot_difference(vertices, edges, k = k, r = r, w = w)
+	# f, ax = plt.subplots(K,M)
+	# for i, l in enumerate(letters):
+	# 	for m in range(M):
+	# 		idx = i * M + m
+	# 		plot_curve_color(vertices[idx], plt = ax[i][m],  k = k, r = r, w = w)
+	plt.show()
+
+
+def test_bar_code(): 
+	im_size = 30
+	vertices = get_image2('P',0, size=im_size)[0]
+	k = 20
+	r = 2 * 1.01 * math.sqrt(2) / im_size
+	w = 0
+	plot_filtration(vertices, k = k, r = r, w = w, annotate = False)
+	# plot_edges(vertices, k = k, r = r, w = w, annotate = False)
+	plt.figure()
+	plot_bar_code(vertices, k = k, r = r, w = w, annotate = False)
+	plt.show()
+
 def run(): 
+	test_triangulation()
+	# run_manual()
+	# test_bar_code()
+	return
 
 	im_size = 30
-	letters = 'A'
+	letters = 'APB'
 	M = 5
 	K = len(letters)
 
@@ -33,7 +86,7 @@ def run():
 	for k, l in enumerate(letters):
 		for m in range(M): 
 			idx = k * M + m
-			vertices[idx] = get_image(l, m, im_size)[0]
+			vertices[idx] = get_image2(l, m, im_size)[0]
 
 
 	k = 20
@@ -42,14 +95,22 @@ def run():
 
 	plot_difference(vertices, k = k, r = r, w = w)
 
-	f, ax = plt.subplots(3,M)
-	for m in range(M):
-		plot_curve_color(vertices[m], plt = ax[0][m], k = k, r = r, w = w)
-		plot_edges(vertices[m], plt = ax[1][m], k = k, r = r, w = w)
-		plot_bar_code(vertices[m], plt = ax[2][m], k = k, r = r, w = w)
+	# f, ax = plt.subplots(3,M)
+	# for m in range(M):
+	# 	plot_curve_color(vertices[m], plt = ax[0][m], k = k, r = r, w = w)
+	# 	plot_edges(vertices[m], plt = ax[1][m], k = k, r = r, w = w)
+	# 	plot_bar_code(vertices[m], plt = ax[2][m], k = k, r = r, w = w)
 
+	# plot_difference(vertices, plt=plt)
 
-
+	f, ax = plt.subplots(K,M)
+	for i, l in enumerate(letters):
+		for m in range(M):
+			idx = i * M + m
+			# ax[i][m].imshow(vertices[idx])
+			# plot_curve_color(vertices[idx], plt = ax[i][m],  k = k, r = r, w = w)
+			# plot_edges(vertices[idx], plt = ax[i][m],  k = k, r = r, w = w)
+			plot_bar_code(vertices[idx], plt = ax[i][m],  k = k, r = r, w = w)
 	# A = np.zeros((5,5))
 	# edges = np.array([[0,1],[1,2],[1,3],[2,3],[3,4]])
 	# A[edges[:,0], edges[:,1]] = 1
@@ -59,7 +120,6 @@ def run():
 
 	# print(np.argwhere(np.bincount(edges[:,0])>1).flatten())
 
-	# plot_difference(vertices, plt=plt)
 
 	# N_grid = 5
 	# plt.imshow(im)
@@ -104,6 +164,18 @@ def get_image(letter, number, size=50):
 	vertices = vertices * 2.0 / size - 1
 	return vertices, image, original
 
+def get_image2(letter, number, size=50):
+	image = misc.imread("./res/{0}{1}.png".format(letter.lower(), number + 1))
+	image = image[:,:,3] # Make background = 0 and letter > 0
+	original = image
+	mask = image > 0
+	image = image[np.ix_(mask.any(1),mask.any(0))] # Crop
+	image = misc.imresize(image, [size, size], interp="bicubic")
+	image[image>0] = 1 # Make binary
+	# image = mp.skeletonize(image) # Skeleton
+	vertices = np.flip(np.array(np.nonzero(image)).T, axis=1)
+	vertices = vertices * 2.0 / size - 1
+	return vertices, image, original
 
 
 run()
