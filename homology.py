@@ -16,14 +16,14 @@ def get_tangent_space(vertices, k = 4, r = .6, w = .5, double = True):
 
 def test_edges(vertices, k=4, r=.6, w=.5):
 	tangent_space, tangents, curve = get_tangent_space(vertices, k, r, w)
-	edges = find_edges(tangent_space)
+	edges = find_edges(tangent_space, vertices, r)
 	return edges
 
 
 def test_filtration(vertices, edges = None, k=4, r=.6, w=.5):
 	tangent_space, tangents, curve = get_tangent_space(vertices, k, r, w)
 	if edges is None:
-		edges = find_edges(tangent_space)
+		edges = find_edges(tangent_space, vertices, r)
 
 	ordered_simplices, _ = get_ordered_simplices(vertices, curve, edges)
 	return ordered_simplices, curve
@@ -32,7 +32,7 @@ def test_filtration(vertices, edges = None, k=4, r=.6, w=.5):
 def test_bar_code(vertices, edges = None, k=4, r=.6, w=.5):
 	tangent_space, tangents, curve = get_tangent_space(vertices, k, r, w)
 	if edges is None:
-		edges = find_edges(tangent_space)
+		edges = find_edges(tangent_space, vertices, r)
 	ordered_simplices, curve_lookup = get_ordered_simplices(vertices, curve, edges)
 	bar_code = bc.get_bar_code(ordered_simplices, degree_values=curve[np.argsort(curve)])
 	return bar_code, ordered_simplices
@@ -44,7 +44,7 @@ def process_shape(vertices, k=4, r=.6, w=.5):
 	"""
 
 	tangent_space, tangents, curve = get_tangent_space(vertices, k, r, w)
-	edges = find_edges(tangent_space)
+	edges = find_edges(tangent_space, vertices, r)
 
 	ordered_simplices, curve_lookup = get_ordered_simplices(vertices, curve, edges)
 	bar_code = bc.get_bar_code(ordered_simplices, degree_values=curve[np.argsort(curve)])
@@ -95,7 +95,7 @@ if __name__ == "__main__":
 
 # ---------------------------------------------------------------------------------
 
-def find_edges(tangent_space):
+def find_edges(tangent_space, vertices, r):
 	"""
 	returns Nx2 matrix, array elements are indices of the vertices that bound the edge
 	"""
@@ -106,6 +106,7 @@ def find_edges(tangent_space):
 	find_edges_array = np.vectorize(find_edges_partial, otypes=[np.ndarray])
 	all_edges = np.concatenate(find_edges_array(np.arange(0,N)), axis=1).T
 	edges = remove_duplicate_edges(all_edges)
+	edges = remove_small_cycles(vertices, edges, r)
 	return edges
 
 
@@ -113,8 +114,8 @@ def remove_duplicate_edges(edges):
 	"""
 	edges is a column array
 	"""
-	x,y = np.sort(edges, axis=1).T
-	unique_idx = np.unique(x + y*1.0j, return_index=True)[1]
+	c = to_complex(np.sort(edges, axis=1).T)
+	unique_idx = np.unique(c, return_index=True)[1]
 	return edges[unique_idx, :]
 
 
@@ -124,6 +125,22 @@ def find_edges_for_point(idx, points, kd_tree):
 	neighbors_idx = np.delete(neighbors_idx, np.argwhere(neighbors_idx==idx))
 	N = neighbors_idx.shape[0]
 	return np.array([np.ones(N).astype(int) * idx, neighbors_idx.T])
+
+
+def remove_small_cycles(vertices, edges, r): 
+	N = vertices.shape[0]
+	A = np.zeros((N,N))
+	A[edges[:,0], edges[:,1]] = 1
+	A[edges[:,1], edges[:,0]] = 1
+	bad_verts = np.argwhere(np.diagonal(A.dot(A).dot(A))).flatten()
+	D = spatial.distance_matrix(vertices[bad_verts,:], vertices[bad_verts,:])
+	A_bad = A[bad_verts,:][:,bad_verts]
+	bad_edges = bad_verts[np.argwhere((D * A_bad) > r / math.sqrt(2))]
+	unique_bad_edges = bad_edges[bad_edges[:,0] < bad_edges[:,1]]
+	unique_bad_edges_c = to_complex(unique_bad_edges)
+	edges_c = to_complex(edges)
+	new_edges_c = np.setdiff1d(edges_c, unique_bad_edges_c)
+	return to_real(new_edges_c)
 
 # ---------------------------------------------------------------------------------
 
@@ -189,3 +206,13 @@ def fitODR(data):
 	o = odr.ODR(data, linear, beta0=[1,0])
 	out = o.run()
 	return out.beta
+
+# ------------------------------------------------------------------------
+
+def to_complex(v):
+	if v.shape[0] == 2: x, y = v
+	else: x, y = v.T
+	return x + y * 1.0j		
+
+def to_real(c, dtype = int): 
+	return np.array([np.real(c), np.imag(c)]).T.astype(dtype)

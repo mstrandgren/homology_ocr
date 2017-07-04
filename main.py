@@ -22,59 +22,44 @@ from complex_creator import draw_complex
 
 
 def run(): 
-	# d1 = manual_data['D']
-	# v1 = np.array(d1['vertices'])
-	# e1 = np.array(d1['edges'])
 
-	# d2 = manual_data['O']
-	# v2 = np.array(d2['vertices'])
-	# e2 = np.array(d2['edges'])
+	M = 3
+	vertices = [0] * M
+	for i in range(M): 
+		vertices[i] = get_image('U',i,30)[0]
 
-	N = 32
-	K = 2
-	M = 5
+	k = 20
+	r = 2 * 1.01 * math.sqrt(2) /30
+	w = 0
 
-	vertices = [0] * (M * K)
-	edges = [0] * (M * K)
+	f, ax = plt.subplots(1,2)
+	plot_curve_color(vertices[0], ax[0], k = k, r = r, w = w)
+	edges = plot_edges(vertices[0], ax[1], k = k, r = r, w = w)
 
-	for k, l in enumerate('AB'):
-		for m in range(M):
-			idx = k*M + m
-			d = manual_data[l][m]
-			vertices[idx] = np.array(d['vertices'])
-			edges[idx] = np.array(d['edges'])
 
-	# plot_filtration(vertices[0], edges[0])
-	plot_difference(vertices, edges, plt)
-	# hm.test_bar_code(vertices[1], edges[1])
 
-	# plot_filtration(vertices, edges)
-	# plt.figure()
 
-	# f, ax = plt.subplots(2,M)
-	# for m in range(M):
-	# 	plot_curve_color(vertices[m], plt=ax[0,m])
-	# 	plot_bar_code(vertices[m], edges[m], plt=ax[1,m])
+	# A = np.zeros((5,5))
+	# edges = np.array([[0,1],[1,2],[1,3],[2,3],[3,4]])
+	# A[edges[:,0], edges[:,1]] = 1
+	# A[edges[:,1], edges[:,0]] = 1
+	# print(A)
+	# print(np.argwhere(np.diagonal(A.dot(A).dot(A))))
 
-	# N = vertices.shape[0]
-	# k = int(N / 4)
-	# r = .3
-	# w = 3
+	# print(np.argwhere(np.bincount(edges[:,0])>1).flatten())
 
-	# print(vertices)
+	# plot_difference(vertices, plt=plt)
 
-	# plot_edges(vertices, k = k, r = r, w = w)
-	# plt.figure()
-	# plot_tangent_space(vertices, k = k, r = r, w = .5)
+	# N_grid = 5
+	# plt.imshow(im)
+	# M,N = im.shape
 
-	# f, ax = plt.subplots(1,2)
-	# plot_edges(vertices, k = k, r = r, w = w, plt = ax[0])
-	# plot_bar_code(vertices, k = k, r = r, w = w, plt = ax[1])
+	# grid = np.mgrid[0:N_grid, 0:N_grid]
+	# x = grid[0] * N/N_grid + N/(2 * N_grid)
+	# y = grid[1] * M/N_grid + M/(2 * N_grid)
+	# plt.scatter(x, y, marker='+')
 
-	# plot_curve_color(vertices, k = k, r = r, w = w)
-	# plot_filtration(vertices, k = k, r = r, w = w)
 
-	# plt.tight_layout()
 	plt.show()
 	return
 
@@ -101,13 +86,11 @@ def get_image(letter, number, size=50):
 	original = image
 	mask = image > 0
 	image = image[np.ix_(mask.any(1),mask.any(0))] # Crop
-	image = misc.imresize(image, [size*2, size*2], interp="nearest")
-	image = mp.thin(image) # Skeleton
 	image = misc.imresize(image, [size, size], interp="bicubic")
 	image[image>0] = 1 # Make binary
-	image = mp.thin(image) # Skeleton
+	image = mp.skeletonize(image) # Skeleton
 	vertices = np.flip(np.array(np.nonzero(image)).T, axis=1)
-	vertices = vertices * 2.0 / np.max(vertices) - 1
+	vertices = vertices * 2.0 / size - 1
 	return vertices, image, original
 
 

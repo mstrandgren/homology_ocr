@@ -20,7 +20,7 @@ def plot_tangent_space(vertices, plt = plt, k=4, r=.6, w=.5, annotate = False):
 	plt.scatter(1 / r * vertices[:,0], 1 / r * vertices[:,1], marker = '.')
 
 
-def plot_edges(vertices, plt = plt, k=4, r=.6, w=.5):
+def plot_edges(vertices, plt = plt, k=4, r=.6, w=.5, annotate = False):
 	"""
 	Fun settings for w,r: (0,.5), (0,.6), (0,3), (100, 55)
 	"""
@@ -28,9 +28,13 @@ def plot_edges(vertices, plt = plt, k=4, r=.6, w=.5):
 	plt.scatter(vertices[:,0],vertices[:,1], marker='.')
 	for edge in edges:
 		plt.plot(vertices[edge, 0], vertices[edge, 1], lw = 1, c = 'gray')
+		if annotate:
+			plt.annotate("{0}".format(edge[0]), (vertices[edge[0],0], vertices[edge[0],1]))
+			plt.annotate("{0}".format(edge[1]), (vertices[edge[1],0], vertices[edge[1],1]))			
 	
 	plt.scatter(vertices[:,0],vertices[:,1], marker='.')
 	set_limits(1.1, plt)
+	return edges
 
 
 def plot_curve(vertices, plt = plt, k = 4, r = .6, w = .5):
@@ -76,15 +80,20 @@ def plot_bar_code(vertices, edges = None, plt = plt, k=4, r=.6, w=.5):
 def plot_difference(vertices, edges = None, plt = plt, k=4, r=.6, w=.5, inf=1e14):
 	M = len(vertices)
 	diffs = np.zeros([M,M])
+	barcodes = [0] * len(vertices)
+
+
+	for idx, v in enumerate(vertices):
+		print(v.shape)
+		if edges is not None:
+			barcodes[idx] = hm.test_bar_code(v, edges[idx], k = k, r = r, w = w)[0]
+		else: 
+			barcodes[idx] = hm.test_bar_code(v, k = k, r = r, w = w)[0]
+		print("Calculated bar code {0}".format(idx))
+
 	for i in range(M):
 		for j in range(M):
-			if edges is not None: 
-				bc1 = hm.test_bar_code(vertices[i], edges[i], k = k, r = r, w = w)[0]
-				bc2 = hm.test_bar_code(vertices[j], edges[j], k = k, r = r, w = w)[0]
-			else:
-				bc1 = hm.test_bar_code(vertices[i], k = k, r = r, w = w)[0]
-				bc2 = hm.test_bar_code(vertices[j], k = k, r = r, w = w)[0]
-			diffs[i,j] = bc.bar_code_diff(bc1, bc2, inf = inf)
+			diffs[i,j] = bc.bar_code_diff(barcodes[i], barcodes[j], inf = inf)
 
 	plt.imshow(diffs, cmap='gray')
 
