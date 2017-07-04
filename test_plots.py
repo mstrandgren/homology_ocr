@@ -95,6 +95,8 @@ def plot_difference(vertices, edges = None, plt = plt, k=4, r=.6, w=.5, inf=1e14
 		for j in range(M):
 			diffs[i,j] = bc.bar_code_diff(barcodes[i], barcodes[j], inf = inf)
 
+	dmax = np.max(diffs[diffs < inf/100]) * 2
+	diffs[diffs > inf/100] = dmax
 	plt.imshow(diffs, cmap='gray')
 
 # ------------------------------------------------------------------------

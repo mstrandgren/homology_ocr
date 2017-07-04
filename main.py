@@ -23,19 +23,30 @@ from complex_creator import draw_complex
 
 def run(): 
 
-	M = 3
-	vertices = [0] * M
-	for i in range(M): 
-		vertices[i] = get_image('U',i,30)[0]
+	im_size = 30
+	letters = 'A'
+	M = 5
+	K = len(letters)
+
+	vertices = [0] * (M * K)
+
+	for k, l in enumerate(letters):
+		for m in range(M): 
+			idx = k * M + m
+			vertices[idx] = get_image(l, m, im_size)[0]
+
 
 	k = 20
-	r = 2 * 1.01 * math.sqrt(2) /30
+	r = 2 * 1.01 * math.sqrt(2) / im_size
 	w = 0
 
-	f, ax = plt.subplots(1,2)
-	plot_curve_color(vertices[0], ax[0], k = k, r = r, w = w)
-	edges = plot_edges(vertices[0], ax[1], k = k, r = r, w = w)
+	plot_difference(vertices, k = k, r = r, w = w)
 
+	f, ax = plt.subplots(3,M)
+	for m in range(M):
+		plot_curve_color(vertices[m], plt = ax[0][m], k = k, r = r, w = w)
+		plot_edges(vertices[m], plt = ax[1][m], k = k, r = r, w = w)
+		plot_bar_code(vertices[m], plt = ax[2][m], k = k, r = r, w = w)
 
 
 
