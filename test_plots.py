@@ -10,21 +10,32 @@ def plot_vertices(vertices, plt = plt):
 
 
 def plot_tangent_space(vertices, plt = plt, k=4, r=.6, w=.5, annotate = False):
-	tangent_space, tangents, _ = hm.get_tangent_space(vertices, k = k, r = r, w = w, double=True)
-
+	tangent_space, tangents, _ = hm.get_tangent_space(vertices, k = k, r = r, w = w, double=False)
 	for idx, x in enumerate(tangent_space): 
-		plt.plot([x[0], x[0] + x[2]], [x[1], x[1] + x[3]], lw = 1, c='gray')
+		# plt.plot([x[0], x[0] + x[2]], [x[1], x[1] + x[3]], lw = 1, c='gray')
+		plt.arrow(x = x[0], y = x[1], dx = x[2], dy = x[3], lw = .3, head_width=0.02, head_length=0.04, fc='blue', ec='blue')
 		if annotate:
 			plt.annotate("{0:1.2f}".format(tangents[idx]/math.pi), (x[0], x[1]))
 
-	plt.scatter(1 / r * vertices[:,0], 1 / r * vertices[:,1], marker = '.')
+	plt.scatter(1 / r * vertices[:,0], 1 / r * vertices[:,1], marker = '.', c='k', s=3)
+
+	try: 
+		plt.invert_yaxis()
+		plt.set_xticklabels([])
+		plt.set_yticklabels([])
+	except:
+		plt.gca().invert_yaxis()
+		plt.gca().set_xticklabels([])
+		plt.gca().set_yticklabels([])
 
 
-def plot_edges(vertices, plt = plt, k=4, r=.6, w=.5, annotate = False):
+def plot_edges(vertices, edges = None, plt = plt, k=4, r=.6, w=.5, annotate = False):
 	"""
 	Fun settings for w,r: (0,.5), (0,.6), (0,3), (100, 55)
 	"""
-	edges = hm.test_edges(vertices, k = k, r = r, w = w)
+	if edges is None:
+		edges = hm.test_edges(vertices, k = k, r = r, w = w)
+
 	plt.scatter(vertices[:,0],vertices[:,1], marker='.')
 	for edge in edges:
 		plt.plot(vertices[edge, 0], vertices[edge, 1], lw = 1, c = 'gray')
@@ -34,6 +45,16 @@ def plot_edges(vertices, plt = plt, k=4, r=.6, w=.5, annotate = False):
 	
 	plt.scatter(vertices[:,0],vertices[:,1], marker='.')
 	set_limits(1.1, plt)
+
+	try: 
+		plt.set_xticklabels([])
+		plt.set_yticklabels([])
+		plt.invert_yaxis()
+	except:
+		plt.gca().invert_yaxis()
+		plt.gca().set_xticklabels([])
+		plt.gca().set_yticklabels([])
+
 	return edges
 
 
@@ -53,6 +74,14 @@ def plot_curve_color(vertices, plt = plt, k = 4, r = .6, w = .5):
 	# plt.set_cmap('plasma')
 	plt.scatter(vertices[:,0], vertices[:,1], marker = '.', c=curve, cmap='plasma', s=200)
 	set_limits(1.1, plt)
+	try: 
+		plt.set_xticklabels([])
+		plt.set_yticklabels([])
+		plt.invert_yaxis()
+	except:
+		plt.gca().invert_yaxis()
+		plt.gca().set_xticklabels([])
+		plt.gca().set_yticklabels([])
 
 
 def plot_filtration(vertices, edges = None, plt = plt, k=4, r=.6, w=.5, annotate = False): 
@@ -67,7 +96,9 @@ def plot_filtration(vertices, edges = None, plt = plt, k=4, r=.6, w=.5, annotate
 			deg = min(idx * degree_step, max_degree)
 			plot_simplices(simplices, deg, vertices, ax[i][j], annotate = annotate)
 
-			ax[i][j].set_title("Curve={0:1.4f}".format(curve[verts_degree[deg,0]]))
+			ax[i][j].set_title("κ={0:1.4f}".format(curve[verts_degree[deg,0]]), fontsize=8)
+			ax[i][j].set_xticklabels([])
+			ax[i][j].set_yticklabels([])
 
 	set_limits(1.1, plt)
 
@@ -76,6 +107,11 @@ def plot_bar_code(vertices, edges = None, plt = plt, k=4, r=.6, w=.5, annotate =
 	bar_code, _ = hm.test_bar_code(vertices, edges, k = k, r = r, w = w)
 	np.set_printoptions(precision=3, suppress=True)
 	bc.plot_barcode_gant(bar_code, plt = plt, annotate = annotate)
+
+	try: 
+		plt.set_yticklabels([])
+	except:
+		plt.gca().set_yticklabels([])
 
 
 def plot_difference(vertices, edges = None, plt = plt, k=4, r=.6, w=.5, inf=1e14):
@@ -128,3 +164,5 @@ def set_limits(l, plt):
 	except: 
 		plt.set_xlim(-l ,l)
 		plt.set_ylim(-l ,l)
+
+
