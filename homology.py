@@ -2,7 +2,7 @@ import math
 from functools import partial
 from scipy import odr, spatial
 import numpy as np
-import bar_code as bc
+import barcode as bc
 
 
 def get_tangent_space(vertices, k = 4, r = .6, w = .5, double = True): 
@@ -29,13 +29,13 @@ def test_filtration(vertices, edges = None, k=4, r=.6, w=.5):
 	return ordered_simplices, curve
 
 
-def test_bar_code(vertices, edges = None, k=4, r=.6, w=.5):
+def test_barcode(vertices, edges = None, k=4, r=.6, w=.5):
 	tangent_space, tangents, curve = get_tangent_space(vertices, k, r, w)
 	if edges is None:
 		edges = find_edges(tangent_space, vertices, r)
 	ordered_simplices, curve_lookup = get_ordered_simplices(vertices, curve, edges)
-	bar_code = bc.get_bar_code(ordered_simplices, degree_values=curve[np.argsort(curve)])
-	return bar_code, ordered_simplices
+	barcode = bc.get_barcode(ordered_simplices, degree_values=curve[np.argsort(curve)])
+	return barcode, ordered_simplices
 
 
 def process_shape(vertices, k=4, r=.6, w=.5): 
@@ -47,9 +47,9 @@ def process_shape(vertices, k=4, r=.6, w=.5):
 	edges = find_edges(tangent_space, vertices, r)
 
 	ordered_simplices, curve_lookup = get_ordered_simplices(vertices, curve, edges)
-	bar_code = bc.get_bar_code(ordered_simplices, degree_values=curve[np.argsort(curve)])
+	barcode = bc.get_barcode(ordered_simplices, degree_values=curve[np.argsort(curve)])
 
-	return ordered_simplices, bar_code
+	return ordered_simplices, barcode
 
 
 def get_ordered_simplices(vertices, curve, edges): 

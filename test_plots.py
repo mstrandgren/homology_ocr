@@ -2,7 +2,7 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 import homology as hm
-import bar_code as bc
+import barcode as bc
 
 
 def plot_vertices(vertices, plt = plt):
@@ -103,10 +103,10 @@ def plot_filtration(vertices, edges = None, plt = plt, k=4, r=.6, w=.5, annotate
 	set_limits(1.1, plt)
 
 
-def plot_bar_code(vertices, edges = None, plt = plt, k=4, r=.6, w=.5, annotate = False):
-	bar_code, _ = hm.test_bar_code(vertices, edges, k = k, r = r, w = w)
+def plot_barcode(vertices, edges = None, plt = plt, k=4, r=.6, w=.5, annotate = False):
+	barcode, _ = hm.test_barcode(vertices, edges, k = k, r = r, w = w)
 	np.set_printoptions(precision=3, suppress=True)
-	bc.plot_barcode_gant(bar_code, plt = plt, annotate = annotate)
+	bc.plot_barcode_gant(barcode, plt = plt, annotate = annotate)
 
 	try: 
 		plt.set_yticklabels([])
@@ -123,14 +123,14 @@ def plot_difference(vertices, edges = None, plt = plt, k=4, r=.6, w=.5, inf=1e14
 	for idx, v in enumerate(vertices):
 		print(v.shape)
 		if edges is not None:
-			barcodes[idx] = hm.test_bar_code(v, edges[idx], k = k, r = r, w = w)[0]
+			barcodes[idx] = hm.test_barcode(v, edges[idx], k = k, r = r, w = w)[0]
 		else: 
-			barcodes[idx] = hm.test_bar_code(v, k = k, r = r, w = w)[0]
+			barcodes[idx] = hm.test_barcode(v, k = k, r = r, w = w)[0]
 		print("Calculated bar code {0}".format(idx))
 
 	for i in range(M):
 		for j in range(M):
-			diffs[i,j] = bc.bar_code_diff(barcodes[i], barcodes[j], inf = inf)
+			diffs[i,j] = bc.barcode_diff(barcodes[i], barcodes[j], inf = inf)
 
 	dmax = np.max(diffs[diffs < inf/100]) * 1.1
 	diffs[diffs > inf/100] = dmax

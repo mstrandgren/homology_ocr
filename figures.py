@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import homology as hm
-import bar_code as bc
+import barcode as bc
 from test_plots import *
 from data import *
 from man_data import data as manual_data
@@ -19,14 +19,14 @@ def ellipse_filtration():
 	plt.tight_layout()
 	plt.show()
 
-def ellipse_bar_code():
+def ellipse_barcode():
 	vertices, edges = get_ellipse(16, .5)
 
 	k = 4
 	r = 1
 	w = 0
 	# plot_edges(vertices, edges, plt, k = k, r = r, w = w)
-	plot_bar_code(vertices, edges, plt, k = k, r = r, w = w)
+	plot_barcode(vertices, edges, plt, k = k, r = r, w = w)
 	plt.tight_layout()
 	plt.show()
 
@@ -57,7 +57,7 @@ def p_curve():
 
 def run():
 	# ellipse_filtration()
-	# ellipse_bar_code()
+	# ellipse_barcode()
 	p_tangents()
 	# p_curve()
 

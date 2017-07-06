@@ -36,7 +36,7 @@ def remove_pivot_rows(simplex, T, marked, youngest_simplex):
 		d = simplex_add(d, T[i])
 	return d
 
-def get_bar_code(ordered_simplices, degrees = None, degree_values=None):
+def get_barcode(ordered_simplices, degrees = None, degree_values=None):
 	"""
 	ordered_simplices is a 5 column matrix (i, b1, b2, deg, k)
 	degrees is a lookup table from simplex id to degree (birth time)
@@ -95,21 +95,31 @@ def get_bar_code(ordered_simplices, degrees = None, degree_values=None):
 
 # ------------------------------------------------------------------------
 	
-def bar_code_diff(bar1, bar2, inf = None):
+def barcode_diff(bar1, bar2, inf = None):
 	"""	
 	From "A Barcode Shape Descriptor for Curve Point Cloud Data", 2.4
 
 	bars are Nx2 matrices
+	It's assumed that intervals are sorted (start <= end)
 	result is and N1xN2 matrix
 
 	infinite distances have a lot of impact, figure out what to do about them
 	"""
-	if inf is None:
-		bmax = max(np.max(bar1[bar1!=math.inf]), np.max(bar2[bar2!=math.inf]))
-		inf = bmax * 2
 
-	bar1[bar1==math.inf] = inf
-	bar2[bar2==math.inf] = inf
+	# Step 1: if the number of half-infinite bars is not equal, the distance is infinite
+	inf1 = bar1[bar1[:,1] == math.inf,:]
+	inf2 = bar2[bar2[:,1] == math.inf,:]
+	if inf1.shape[0] != inf2.shape[0]:
+		return math.inf
+
+	# Step 2: Compute the distance between the half-infinite intervals and remove them from the rest of the calculation
+	inf1 = inf1[np.argsort(inf1[:,0]), 0]
+	inf2 = inf2[np.argsort(inf2[:,0]), 0]
+	inf_sum = np.sum(np.abs(inf1 - inf2))
+	bar1 = bar1[bar1[:,1] != math.inf,:]
+	bar2 = bar2[bar2[:,1] != math.inf,:]
+
+	# Step 3: Compute the distance between the finite intervals
 
 	# Bar lengths
 	l1 = bar1[:,1] - bar1[:,0]
@@ -133,22 +143,17 @@ def bar_code_diff(bar1, bar2, inf = None):
 
 	is_disjoint = np.logical_or(x<=0,y<=0)
 	result = np.zeros(x.shape)
-	disjoint = np.add.outer(l1, l2)
 
-	result[is_disjoint] = disjoint[is_disjoint]
-	is_overlap = np.logical_and(x<l_max, y<l_max)
-	overlap = np.abs(np.add.outer(l1, -l2))
-	result[is_overlap] = overlap[is_overlap]
-
-	is_partial = np.logical_and(np.logical_not(is_overlap), np.logical_not(is_disjoint))
-	partial = np.abs(x - y)
-	result[is_partial] = partial[is_partial]
+	disjoint = np.add.outer(l1, l2)	
+	result = is_disjoint * np.abs(x + y) + np.logical_not(is_disjoint) * np.abs(x - y)
 
 	i,j = linear_sum_assignment(result)
 	nonmatched = list(set(range(result.shape[1])).difference(set(j)))
 	matched_sum = np.sum(result[i,j])
 	nonmatched_sum = np.sum(l2[nonmatched])
-	return matched_sum + nonmatched_sum
+
+	print(result)
+	return matched_sum + nonmatched_sum + inf_sum
 
 
 # ------------------------------------------------------------------------
@@ -201,9 +206,9 @@ def test():
 	[(0,2), (0,5)], # l=3
 	[(0,5), (3,5)], # l=3
 	[(1,2), (0,2)], # l=1
-	[(1,4), (0,math.inf)], # l=inf
-	[(1,2), (5,math.inf)], # l=inf
-	[(1,math.inf), (5,math.inf)] # l=inf
+	[(1,4), (0,2)], # l=
+	[(5,math.inf), (1,math.inf)], # l=inf
+	[(3,math.inf), (4,math.inf)] # l=inf
 	]
 
 	bar1 = np.zeros([len(test_bars),2])
@@ -216,9 +221,10 @@ def test():
 		bar2[idx + len(test_bars), :] = [2,4]
 
 	print(bar1)
+	print('-')
 	print(bar2)
 
-	print(barcode_diff(bar2, bar1))
+	print(barcode_diff(bar1, bar2))
 
 
 if __name__ == "__main__":

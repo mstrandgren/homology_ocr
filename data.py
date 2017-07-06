@@ -16,7 +16,7 @@ def get_ellipse(N = 16, skew = 0.7):
 
 def analyze_image(image): 
 	vertices = get_vertices(image)
-	simplices, bar_code = hm.process_shape(vertices)	
+	simplices, barcode = hm.process_shape(vertices)	
 
 
 def get_image(letter, number, size=50):

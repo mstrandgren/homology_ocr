@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import homology as hm
-import bar_code as bc
+import barcode as bc
 from test_plots import *
 from data import *
 from man_data import data as manual_data
@@ -51,7 +51,7 @@ def run_manual():
 	plt.show()
 
 
-def test_bar_code(): 
+def test_barcode(): 
 	im_size = 30
 	vertices = get_image2('P',0, size=im_size)[0]
 	k = 20
@@ -60,13 +60,13 @@ def test_bar_code():
 	plot_filtration(vertices, k = k, r = r, w = w, annotate = False)
 	# plot_edges(vertices, k = k, r = r, w = w, annotate = False)
 	plt.figure()
-	plot_bar_code(vertices, k = k, r = r, w = w, annotate = False)
+	plot_barcode(vertices, k = k, r = r, w = w, annotate = False)
 	plt.show()
 
 def run(): 
 	test_triangulation()
 	# run_manual()
-	# test_bar_code()
+	# test_barcode()
 	return
 
 	im_size = 30
@@ -92,7 +92,7 @@ def run():
 	# for m in range(M):
 	# 	plot_curve_color(vertices[m], plt = ax[0][m], k = k, r = r, w = w)
 	# 	plot_edges(vertices[m], plt = ax[1][m], k = k, r = r, w = w)
-	# 	plot_bar_code(vertices[m], plt = ax[2][m], k = k, r = r, w = w)
+	# 	plot_barcode(vertices[m], plt = ax[2][m], k = k, r = r, w = w)
 
 	# plot_difference(vertices, plt=plt)
 
@@ -103,7 +103,7 @@ def run():
 			# ax[i][m].imshow(vertices[idx])
 			# plot_curve_color(vertices[idx], plt = ax[i][m],  k = k, r = r, w = w)
 			# plot_edges(vertices[idx], plt = ax[i][m],  k = k, r = r, w = w)
-			plot_bar_code(vertices[idx], plt = ax[i][m],  k = k, r = r, w = w)
+			plot_barcode(vertices[idx], plt = ax[i][m],  k = k, r = r, w = w)
 	# A = np.zeros((5,5))
 	# edges = np.array([[0,1],[1,2],[1,3],[2,3],[3,4]])
 	# A[edges[:,0], edges[:,1]] = 1
