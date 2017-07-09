@@ -3,15 +3,20 @@ from functools import partial
 from scipy import odr, spatial
 import numpy as np
 import barcode as bc
+import matplotlib.pyplot as plt
 
 
-def get_tangents(vertices, k = 4, double = False): 
+def get_tangents(vertices, k = 16, double = False): 
 	N = vertices.shape[0]
 	tangents, eigen_values = find_tangents(vertices, k)
 	if double: factor = 2
 	else: factor = 1
-	return np.concatenate([vertices, tangents.reshape(N,1), eigen_values.reshape(N,1)], axis=1)
+	return np.concatenate([vertices, tangents.reshape(N,1)], axis=1)
 
+def get_curve(vertices, k = 16, w = 0.5):
+	tangents = find_tangents(vertices, k)
+	curve = find_curve(vertices, tangents, k, w)
+	return curve
 
 def get_tangent_space(vertices, k = 4, r = .6, w = .5, double = True): 
 	"""
@@ -155,17 +160,6 @@ def remove_small_cycles(vertices, edges, r):
 
 # ---------------------------------------------------------------------------------
 
-def find_curve(vertices, k, kd_tree):
-	"""
-	vertices: Nx2-array of vertices
-	k: number of neighbors
-	kd_tree: A KD-tree of the vertices (pre-made)
-	"""
-	find_tangent_partial = partial(find_tangent, k=k, vertices=vertices, kd_tree=kd_tree)
-	(tangents, curve) = np.apply_along_axis(find_tangent_partial, arr=vertices, axis=1).T
-	return curve, tangents
-
-
 def find_tangents(vertices, k): 
 	"""
 	Returns tangent angle [-pi, pi] for all vertices
@@ -186,15 +180,40 @@ def find_tangent_for_point(x, k, vertices, kd_tree):
 	eigen_values, eigen_vectors = np.linalg.eigh(np.dot(M.T, M))
 	tangent_vector = eigen_vectors[:, np.argmax(eigen_values)]
 	eigen_value_ratio = np.min(eigen_values) / np.max(eigen_values)
-	angle = math.atan2(tangent_vector[1], tangent_vector[0]), eigen_value_ratio
-	return np.mod(angle, math.pi) # no reason to allow angles outside of pi
+	angle = math.atan2(tangent_vector[1], tangent_vector[0])
+	return np.mod(angle, math.pi) #, eigen_value_ratio # no reason to allow angles outside of pi, and eigenvalue ratio doesn't work
 
 
-def find_curve_for_point():
+def find_curve(vertices, tangents, k, w):
+	"""
+	vertices: Nx2-array of vertices
+	tangents: Nx1-array of angles
+	k: number of neighbors
+	w: weight to tangent distance
+	"""
+	N = vertices.shape[0]
+	# print(tangents.shape)
+	tspace = np.concatenate([vertices, w * np.cos(tangents * 2).reshape(N,1), w * np.sin(tangents * 2).reshape(N,1)], axis=1)
+	kd_tree = spatial.KDTree(tspace)
+	find_curve_partial = partial(find_curve_for_point, k=k, tangents=tangents, tspace=tspace, kd_tree=kd_tree)
+	curve = np.apply_along_axis(find_curve_partial, arr=np.arange(N).reshape(1,N), axis=0).T
+	return curve
+
+
+
+def find_curve_for_point(idx, tspace, tangents, k, kd_tree):
 	# Find curve
-	center = np.mean(neighbors, axis=0)
-	rot_matrix = np.array([[np.cos(-tangent), -np.sin(-tangent)], [np.sin(-tangent), np.cos(-tangent)]])
-	translated_neighbors = neighbors - np.repeat([center, center], k/2, axis=0)
+	idx = idx[0]
+	vertices = tspace[:,:2]
+	x = tspace[idx, :]
+	(distances, neighbors_idx) = kd_tree.query(x, k)
+	neighbors = vertices[neighbors_idx.flatten(),:2]
+	plt.scatter(neighbors[:,0], neighbors[:,1], marker='+', c='blue')
+
+	v = tangents[idx]
+	x_0 = np.mean(neighbors, axis=0)
+	rot_matrix = np.array([[np.cos(-v), -np.sin(-v)], [np.sin(-v), np.cos(-v)]])
+	translated_neighbors = neighbors - x_0
 	transformed_neighbors =  np.dot(rot_matrix, translated_neighbors.T).T
 
 	# A Barcode Shape Descriptor... 3.4
@@ -204,8 +223,7 @@ def find_curve_for_point():
 	Y = transformed_neighbors[:,1:2]
 	C = np.linalg.pinv(A.T.dot(A)).dot(A.T).dot(Y)
 	curve = np.abs(2*C[2,0])
-
-	return tangent, curve
+	return curve
 
 # ------------------------------------------------------------------------
 
