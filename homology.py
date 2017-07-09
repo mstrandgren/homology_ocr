@@ -4,7 +4,17 @@ from scipy import odr, spatial
 import numpy as np
 import barcode as bc
 import matplotlib.pyplot as plt
+from data import sparse_sample
 
+def get_all(vertices, N_s, k, w, r):
+	tangents = find_tangents(vertices, k)
+	curve = find_curve(vertices, tangents, k, w)
+	sparse = sparse_sample(vertices, N_s)
+	v_s = vertices[sparse,:]
+	t_s = tangents[sparse]
+	c_s = curve[sparse]
+	edges = rips_complex(v_s, t_s, w = w, r = r)
+	return v_s, t_s, c_s, edges
 
 def get_tangents(vertices, k): 
 	N = vertices.shape[0]
@@ -245,7 +255,7 @@ def find_curve_for_point(idx, tspace, tangents, k, kd_tree):
 	x = tspace[idx, :]
 	(distances, neighbors_idx) = kd_tree.query(x, k)
 	neighbors = vertices[neighbors_idx.flatten(),:2]
-	plt.scatter(neighbors[:,0], neighbors[:,1], marker='+', c='blue')
+	# plt.scatter(neighbors[:,0], neighbors[:,1], marker='+', c='blue')
 
 	v = tangents[idx]
 	x_0 = np.mean(neighbors, axis=0)

@@ -17,16 +17,6 @@ from man_data import data as manual_data
 # CEFGHIJKLMNSTUVXYZ
 
 
-def test_triangulation():
-	im_size = 30
-	k = 20
-	r = .2 # 2 * 1.01 * math.sqrt(2) / im_size
-	w = .5
-	vertices = get_image2('A', 0, im_size)[0]
-	# plot_curve_color(vertices,k = k, r = r, w = w)
-	plot_edges(vertices, k = k, r = r, w = w, annotate = False)
-	plt.show()
-
 
 def run_manual():
 	letters = 'ABD'
@@ -53,18 +43,6 @@ def run_manual():
 	# 		plot_curve_color(vertices[idx], plt = ax[i][m],  k = k, r = r, w = w)
 	plt.show()
 
-
-def test_barcode(): 
-	im_size = 30
-	vertices = get_image2('P',0, size=im_size)[0]
-	k = 20
-	r = 2 * 1.01 * math.sqrt(2) / im_size
-	w = 0
-	plot_filtration(vertices, k = k, r = r, w = w, annotate = False)
-	# plot_edges(vertices, k = k, r = r, w = w, annotate = False)
-	plt.figure()
-	plot_barcode(vertices, k = k, r = r, w = w, annotate = False)
-	plt.show()
 
 
 def plot_tangent_space_3d(tspace, subpl = '111'):
@@ -133,8 +111,8 @@ def test_curve_for_point():
 
 def test_curve():
 	N = 200
-	k = int(N/5)
-	w = 1
+	k = int(N/10)
+	w = .5
 	vertices = get_image('B', 0, size=100, sample_size=N)[0]
 	curve = hm.get_curve(vertices, k = k, w = w)
 	plt.scatter(vertices[:,0], vertices[:,1], marker = '.', c=curve, cmap='plasma', s=200)
@@ -172,7 +150,7 @@ def test_edges():
 	k = int(N/5)
 	w = .5
 	r = .5
-	vertices = get_image('P', 0, size=100, sample_size=N)[0]
+	vertices = get_image('C', 0, size=100, sample_size=N)[0]
 	tangents = hm.find_tangents(vertices, k)
 	sparse = sparse_sample(vertices, N_s)
 	v_s = vertices[sparse,:]
@@ -206,19 +184,86 @@ def test_sparse_sampling():
 	plt.scatter(sparse[:,0], sparse[:,1], marker='+', c='blue')
 	plt.show()
 
+def test_barcode():
+	N = 200
+	N_s = 50
+	k = int(N/5)
+	w = .5
+	r = .6
+	vertices = get_image('C', 1, size=100, sample_size=N)[0]
+	tangents = hm.find_tangents(vertices, k)
+	curve = hm.get_curve(vertices, k = k, w = w)
+	sparse = sparse_sample(vertices, N_s)
+	v_s = vertices[sparse,:]
+	t_s = tangents[sparse]
+	c_s = curve[sparse]
+	edges = hm.get_rips_complex(v_s, tangents=t_s, k = k, w = w, r = r)
+	
+	f, ax = plt.subplots(1,2)
+	plt_edges, plt_barcode = ax
+	plt_edges.scatter(v_s[:,0], v_s[:,1], marker = '.', c=c_s, s=200)
+	for edge in edges:
+		plt_edges.plot(v_s[edge, 0], v_s[edge, 1], lw = 1, c = 'blue')
+	plt_edges.invert_yaxis()
+
+	ordered_simplices, curve_lookup = hm.get_ordered_simplices(v_s, c_s, edges)
+	barcode = bc.get_barcode(ordered_simplices, degree_values=c_s[np.argsort(c_s)])
+	b0 = barcode[barcode[:,2] == 0, :]
+	bc.plot_barcode_gant(b0, plt=plt_barcode)
+	plt.show()
+
+def test_distances():
+	letters = 'ABC'
+	M = 3
+	N = 200
+	N_s = 50
+	k = int(N/5)
+	w = .5
+	r = .6
+
+	barcodes = []
+
+	for i, letter in enumerate(letters):
+		print("Doing {0}".format(letter))
+		for j in range(1, M+1):
+			print("Doing {0}-{1}".format(letter, j))
+			idx = i * M + j
+			vertices = get_image(letter, 1, size=200, sample_size=N)[0]
+			v, t, c, e = hm.get_all(vertices, N_s = N_s, k = k, r = r, w = w)
+			ordered_simplices = hm.get_ordered_simplices(v, c, e)[0]
+			b = bc.get_barcode(ordered_simplices, degree_values=c[np.argsort(c)])
+			b = b[b[:, 2] == 0, :]
+			barcodes.append(b)
+
+	print("Doing diffs...")
+	M_b = len(barcodes)
+	diffs = np.zeros([M_b,M_b])
+	inf = 1e14
+	for i in range(M_b):
+		for j in range(M_b):
+			diffs[i,j] = bc.barcode_diff(barcodes[i], barcodes[j], inf=inf)
+
+	dmax = np.max(diffs[diffs < inf/100]) * 1.1
+	diffs[diffs > inf/100] = dmax
+	plt.imshow(diffs, cmap='gray')
+	plt.show()
+
 
 def run(): 
 	# test_image()
 	# test_tangent()
 	# test_curve()
 	# test_edges_for_point()
-	test_edges()
+	# test_edges()
 	# test_sparse_sampling()
+	# test_barcode()
+	test_distances()
+
 
 
 # Todo: 
-#  - Alternative curve estimation
-#  - Check barcodes with current setup
+#  - Why does size matter?
+#  - Well behaved data set?
 #  - Witness complex?
 #  - Redo figures & settle for result
 

@@ -42,6 +42,8 @@ def get_barcode(ordered_simplices, degrees = None, degree_values=None):
 	degrees is a lookup table from simplex id to degree (birth time)
 
 	a simplex is a flat 5-array
+
+	returns [start_val, end_val, k, start_id, end_id]
 	
 	"""
 	m_max = ordered_simplices.shape[0]
