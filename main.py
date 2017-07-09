@@ -119,7 +119,7 @@ def test_curve_for_point():
 		ax.arrow(x = x[0], y = x[1], dx = x[2], dy = x[3], lw = .3, head_width=0.02, head_length=0.04, fc='#eeeeee', ec='#eeeeee')
 	
 	kd_tree = spatial.KDTree(tspace)
-	hm.find_curve_for_point([78], tspace, tangents, k, kd_tree)
+	hm.find_curve_for_point([78], tspace, tangents, k = k, kd_tree = kd_tree)
 	plt.scatter(point[0], point[1], marker = '+', c = 'red')
 	plt.show()
 
@@ -128,15 +128,61 @@ def test_curve():
 	N = 200
 	k = int(N/5)
 	w = 1
-	vertices = get_image('P', 0, size=100, sample_size=N)[0]
-	curve = hm.get_curve(vertices, k)
+	vertices = get_image('V', 0, size=100, sample_size=N)[0]
+	curve = hm.get_curve(vertices, k = k, w = w)
 	plt.scatter(vertices[:,0], vertices[:,1], marker = '.', c=curve, cmap='plasma', s=200)
 	plt.gca().invert_yaxis()
 	plt.show()
 
+
+def test_edges_for_point():
+	N = 200
+	k = int(N/5)
+	w = .2
+	r = 0.2
+	vertices = get_image('P', 0, size=100, sample_size=N)[0]
+	# edges = hm.get_rips_complex(vertices, k, w, r)
+
+	tangents = hm.find_tangents(vertices, k)
+	tspace = hm.get_tspace(vertices, tangents, w)
+	kd_tree = spatial.KDTree(tspace)
+
+	edges = hm.rips_complex_for_point(0, tspace, kd_tree, r = r).T
+	print(edges)
+	plt.scatter(vertices[:,0], vertices[:,1], marker = '.', c='gray', s=4)
+	for edge in edges:
+		plt.plot(vertices[edge, 0], vertices[edge, 1], lw = 1, c = 'blue')
+		# if annotate:
+		# 	plt.annotate("{0}".format(edge[0]), (vertices[edge[0],0], vertices[edge[0],1]))
+		# 	plt.annotate("{0}".format(edge[1]), (vertices[edge[1],0], vertices[edge[1],1]))			
+
+	plt.show()
+
+
+def test_edges():
+	N = 200
+	k = int(N/5)
+	w = .5
+	r = .15
+	vertices = get_image('O', 0, size=100, sample_size=N)[0]
+	edges = hm.get_rips_complex(vertices, k = k, w = w, r = r)
+	plt.scatter(vertices[:,0], vertices[:,1], marker = '.', c='gray', s=4)
+	for edge in edges:
+		plt.plot(vertices[edge, 0], vertices[edge, 1], lw = 1, c = 'blue')
+
+	plt.gca().invert_yaxis()
+
+	plt.show()
+
+
 def run(): 
 	# test_tangent()
-	test_curve()
+	# test_curve()
+	# test_edges_for_point()
+	# test_edges()
+
+
+
 # ---------------------------------------------------------------------------------
 
 run()

@@ -6,17 +6,29 @@ import barcode as bc
 import matplotlib.pyplot as plt
 
 
-def get_tangents(vertices, k = 16, double = False): 
+def get_tangents(vertices, k, double = False): 
 	N = vertices.shape[0]
 	tangents, eigen_values = find_tangents(vertices, k)
 	if double: factor = 2
 	else: factor = 1
 	return np.concatenate([vertices, tangents.reshape(N,1)], axis=1)
 
-def get_curve(vertices, k = 16, w = 0.5):
+def get_curve(vertices, k, w):
 	tangents = find_tangents(vertices, k)
 	curve = find_curve(vertices, tangents, k, w)
 	return curve
+
+def get_rips_complex(vertices, k, w, r):
+	tangents = find_tangents(vertices, k)
+	# curve = find_curve(vertices, tangents, k, w)
+	edges = rips_complex(vertices, tangents, w = w, r = r)
+	return edges
+
+# ------------------------------------------------------------------------
+
+
+
+
 
 def get_tangent_space(vertices, k = 4, r = .6, w = .5, double = True): 
 	"""
@@ -28,7 +40,6 @@ def get_tangent_space(vertices, k = 4, r = .6, w = .5, double = True):
 	else: factor = 1
 	tangent_space = np.concatenate([vertices / r, np.array([(w / r) * np.cos(factor * tangents), (w / r) * np.sin(factor * tangents)]).T], axis=1)
 	return tangent_space, tangents, curve
-
 
 def test_edges(vertices, k=4, r=.6, w=.5):
 	tangent_space, tangents, curve = get_tangent_space(vertices, k, r, w)
@@ -109,7 +120,34 @@ if __name__ == "__main__":
 	os = get_ordered_simplices(vertices, curve, edges)
 	print(os)
 
+
 # ---------------------------------------------------------------------------------
+
+def rips_complex(vertices, tangents, r, w):
+	"""
+	Draw edges from all points point to all neighbors within radius r
+	"""
+	N = vertices.shape[0]
+	tspace = get_tspace(vertices, tangents, w)
+	kd_tree = spatial.KDTree(tspace)
+	rips_complex_partial = partial(rips_complex_for_point, points=tspace, kd_tree=kd_tree, r=r)
+	rips_complex_array = np.vectorize(rips_complex_partial, otypes=[np.ndarray])
+	all_edges = np.concatenate(rips_complex_array(np.arange(0,N)), axis=1).T
+	edges = remove_duplicate_edges(all_edges)
+	return edges
+
+
+def rips_complex_for_point(idx, points, kd_tree, r): 
+	"""
+	Draw edges from point idx to all points within radius r
+	"""
+	x = points[idx,:]
+	neighbors_idx = np.array(kd_tree.query_ball_point(x, r))
+	neighbors_idx = np.delete(neighbors_idx, np.argwhere(neighbors_idx==idx))
+	N = neighbors_idx.shape[0]
+	return np.array([np.ones(N).astype(int) * idx, neighbors_idx.T])
+
+
 
 def find_edges(tangent_space, vertices, r):
 	"""
@@ -193,7 +231,7 @@ def find_curve(vertices, tangents, k, w):
 	"""
 	N = vertices.shape[0]
 	# print(tangents.shape)
-	tspace = np.concatenate([vertices, w * np.cos(tangents * 2).reshape(N,1), w * np.sin(tangents * 2).reshape(N,1)], axis=1)
+	tspace = get_tspace(vertices, tangents, w)
 	kd_tree = spatial.KDTree(tspace)
 	find_curve_partial = partial(find_curve_for_point, k=k, tangents=tangents, tspace=tspace, kd_tree=kd_tree)
 	curve = np.apply_along_axis(find_curve_partial, arr=np.arange(N).reshape(1,N), axis=0).T
@@ -224,6 +262,12 @@ def find_curve_for_point(idx, tspace, tangents, k, kd_tree):
 	C = np.linalg.pinv(A.T.dot(A)).dot(A.T).dot(Y)
 	curve = np.abs(2*C[2,0])
 	return curve
+
+# ------------------------------------------------------------------------
+
+def get_tspace(vertices, tangents, w): 
+	N = vertices.shape[0]
+	return np.concatenate([vertices, w * np.cos(tangents * 2).reshape(N,1), w * np.sin(tangents * 2).reshape(N,1)], axis = 1)
 
 # ------------------------------------------------------------------------
 
