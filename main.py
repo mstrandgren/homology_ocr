@@ -72,6 +72,7 @@ def plot_tangent_space_3d(tspace, subpl = '111'):
 	ax.scatter(xs=tspace[:,0], ys=tspace[:,1], zs=tspace[:,2])
 	ax.invert_yaxis()
 
+
 def plot_tangent_space_2d(tspace, subpl = '111'):
 	ax = plt.gca()
 	for idx, x in enumerate(tspace): 
@@ -85,9 +86,14 @@ def plot_tangent_space_2d(tspace, subpl = '111'):
 
 
 def test_tangent():
-	vertices, all_points, img, _ = get_image('U', 0, size=200, sample_size=200)
-	tspace = hm.get_tangents(vertices, k = 16, double = False)
-	plot_tangent_space_2d(tspace)
+	N = 200
+	k = int(N/5)
+	vertices, all_points, img, _ = get_image('B', 0, size=200, sample_size=N)
+	tspace = hm.get_tangents(vertices, k = k)
+	sparse = sparse_sample(vertices, 50)
+	plot_tangent_space_2d(tspace[sparse,:])
+	# plot_tangent_space_3d(tspace[sparse,:])
+
 	# f, ax = plt.subplots(1, 3)
 	# ax[0].scatter(vertices[:,0], vertices[:,1], marker='.', c=tspace[:,3])
 	# ax[0].invert_yaxis()
@@ -99,6 +105,7 @@ def test_tangent():
 	# ax[1].invert_yaxis()
 	plt.show()
 	return	
+
 
 def test_curve_for_point():
 
@@ -128,7 +135,7 @@ def test_curve():
 	N = 200
 	k = int(N/5)
 	w = 1
-	vertices = get_image('V', 0, size=100, sample_size=N)[0]
+	vertices = get_image('B', 0, size=100, sample_size=N)[0]
 	curve = hm.get_curve(vertices, k = k, w = w)
 	plt.scatter(vertices[:,0], vertices[:,1], marker = '.', c=curve, cmap='plasma', s=200)
 	plt.gca().invert_yaxis()
@@ -161,25 +168,59 @@ def test_edges_for_point():
 
 def test_edges():
 	N = 200
+	N_s = 50
 	k = int(N/5)
 	w = .5
-	r = .15
-	vertices = get_image('O', 0, size=100, sample_size=N)[0]
-	edges = hm.get_rips_complex(vertices, k = k, w = w, r = r)
-	plt.scatter(vertices[:,0], vertices[:,1], marker = '.', c='gray', s=4)
+	r = .5
+	vertices = get_image('P', 0, size=100, sample_size=N)[0]
+	tangents = hm.find_tangents(vertices, k)
+	sparse = sparse_sample(vertices, N_s)
+	v_s = vertices[sparse,:]
+	t_s = tangents[sparse]
+	edges = hm.get_rips_complex(v_s, tangents=t_s, k = k, w = w, r = r)
+	plt.scatter(v_s[:,0], v_s[:,1], marker = '.', c='gray', s=200)
 	for edge in edges:
-		plt.plot(vertices[edge, 0], vertices[edge, 1], lw = 1, c = 'blue')
+		plt.plot(v_s[edge, 0], v_s[edge, 1], lw = 1, c = 'blue')
 
 	plt.gca().invert_yaxis()
 
 	plt.show()
 
 
+def test_image():
+	N = 200
+	sample, vertices, image, original = get_image('D', 0, size=100, sample_size=N)
+
+	f, ax = plt.subplots(2,2)
+	ax[0][0].imshow(original)
+	ax[0][1].imshow(image)
+	plt.show()
+
+
+def test_sparse_sampling():
+	N = 500
+	vertices = get_image_skeleton('P', 0, size=200, sample_size=N)[0]
+	plt.scatter(vertices[:,0], vertices[:,1], marker = '.', c='#eeeeee')
+
+	sparse = sparse_sample(vertices, 50)
+	plt.scatter(sparse[:,0], sparse[:,1], marker='+', c='blue')
+	plt.show()
+
+
 def run(): 
+	# test_image()
 	# test_tangent()
 	# test_curve()
 	# test_edges_for_point()
-	# test_edges()
+	test_edges()
+	# test_sparse_sampling()
+
+
+# Todo: 
+#  - Alternative curve estimation
+#  - Check barcodes with current setup
+#  - Witness complex?
+#  - Redo figures & settle for result
 
 
 

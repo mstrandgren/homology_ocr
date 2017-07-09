@@ -6,11 +6,9 @@ import barcode as bc
 import matplotlib.pyplot as plt
 
 
-def get_tangents(vertices, k, double = False): 
+def get_tangents(vertices, k): 
 	N = vertices.shape[0]
-	tangents, eigen_values = find_tangents(vertices, k)
-	if double: factor = 2
-	else: factor = 1
+	tangents = find_tangents(vertices, k)
 	return np.concatenate([vertices, tangents.reshape(N,1)], axis=1)
 
 def get_curve(vertices, k, w):
@@ -18,8 +16,9 @@ def get_curve(vertices, k, w):
 	curve = find_curve(vertices, tangents, k, w)
 	return curve
 
-def get_rips_complex(vertices, k, w, r):
-	tangents = find_tangents(vertices, k)
+def get_rips_complex(vertices, tangents = None, k = 20, w = .5, r = .5):
+	if tangents is None: 
+		tangents = find_tangents(vertices, k)
 	# curve = find_curve(vertices, tangents, k, w)
 	edges = rips_complex(vertices, tangents, w = w, r = r)
 	return edges
