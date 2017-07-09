@@ -19,19 +19,22 @@ def analyze_image(image):
 	simplices, barcode = hm.process_shape(vertices)	
 
 
-def get_image(letter, number, size=50):
+def get_image(letter, number, size=100, sample_size=200):
 	sample_idx = ord(letter) - ord('A') + 11
 	image = imread("./res/img/Sample{0:03d}/img{0:03d}-{1:03d}.png".format(sample_idx, number + 1))
 	image = np.invert(image)[:,:,0] # Make background = 0 and letter > 0
 	original = image
+	for i in range(30):
+		image = mp.binary_erosion(image)
 	mask = image > 0
 	image = image[np.ix_(mask.any(1),mask.any(0))] # Crop
-	image = imresize(image, [size, size], interp="bicubic")
+	image = imresize(image, [size, size], interp="nearest")
 	image[image>0] = 1 # Make binary
-	image = mp.skeletonize(image) # Skeleton
 	vertices = np.flip(np.array(np.nonzero(image)).T, axis=1)
 	vertices = vertices * 2.0 / size - 1
-	return vertices, image, original
+	N = vertices.shape[0]
+	sample = vertices[np.random.choice(np.arange(N), size=sample_size),:]
+	return sample, vertices, image, original
 
 def get_image2(letter, number, size=50):
 	image = imread("./res/{0}{1}.png".format(letter.lower(), number + 1))

@@ -5,7 +5,18 @@ import numpy as np
 import barcode as bc
 
 
+def get_tangents(vertices, k = 4, double = False): 
+	N = vertices.shape[0]
+	tangents, eigen_values = find_tangents(vertices, k)
+	if double: factor = 2
+	else: factor = 1
+	return np.concatenate([vertices, tangents.reshape(N,1), eigen_values.reshape(N,1)], axis=1)
+
+
 def get_tangent_space(vertices, k = 4, r = .6, w = .5, double = True): 
+	"""
+	Tangent space is (x, y, cos(v), sin(v))
+	"""
 	kd_tree_2d = spatial.KDTree(vertices)
 	curve, tangents = find_curve(vertices, k, kd_tree_2d)
 	if double: factor = 2
@@ -155,24 +166,33 @@ def find_curve(vertices, k, kd_tree):
 	return curve, tangents
 
 
-def find_tangent(x, k, vertices, kd_tree):
+def find_tangents(vertices, k): 
 	"""
-	Returns a Nx2 matrix with column vectors representing tangent angles (in radians [-PI, PI])
-	and curvature (as the second derivative of the osculating parabola ]-Inf, Inf[)
+	Returns tangent angle [-pi, pi] for all vertices
 	"""
+	kd_tree = spatial.KDTree(vertices)
+	find_tangent_partial = partial(find_tangent_for_point, k=k, vertices=vertices, kd_tree=kd_tree)
+	return np.apply_along_axis(find_tangent_partial, arr=vertices, axis=1).T
 
+
+def find_tangent_for_point(x, k, vertices, kd_tree):
+	"""
+	Returns tangent angle [-pi, pi] for the given point x
+	"""
 	(distances, neighbors_idx) = kd_tree.query(x, k)
-	# Alternative: neighbors_idx = kd_tree.query_ball_point(x, 5) 
-	# k = neighbors.shape[0] # Number of neighbors
 	neighbors = vertices[neighbors_idx,:]
-	center = np.mean(neighbors, axis=0)
+	x_0 = np.mean(neighbors, axis=0)
+	M = neighbors - x_0
+	eigen_values, eigen_vectors = np.linalg.eigh(np.dot(M.T, M))
+	tangent_vector = eigen_vectors[:, np.argmax(eigen_values)]
+	eigen_value_ratio = np.min(eigen_values) / np.max(eigen_values)
+	angle = math.atan2(tangent_vector[1], tangent_vector[0]), eigen_value_ratio
+	return np.mod(angle, math.pi) # no reason to allow angles outside of pi
 
 
-	# Find tangent
-	beta = fitODR(neighbors)
-	tangent = math.atan(beta[0])
-
+def find_curve_for_point():
 	# Find curve
+	center = np.mean(neighbors, axis=0)
 	rot_matrix = np.array([[np.cos(-tangent), -np.sin(-tangent)], [np.sin(-tangent), np.cos(-tangent)]])
 	translated_neighbors = neighbors - np.repeat([center, center], k/2, axis=0)
 	transformed_neighbors =  np.dot(rot_matrix, translated_neighbors.T).T

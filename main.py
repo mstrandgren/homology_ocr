@@ -2,6 +2,7 @@
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 import homology as hm
 import barcode as bc
@@ -63,70 +64,31 @@ def test_barcode():
 	plot_barcode(vertices, k = k, r = r, w = w, annotate = False)
 	plt.show()
 
-def run(): 
-	test_triangulation()
-	# run_manual()
-	# test_barcode()
-	return
 
-	im_size = 30
-	letters = 'APB'
-	M = 5
-	K = len(letters)
+def test_tangent_space():
+	vertices, all_points, img, _ = get_image('V', 0, size=100, sample_size=200)
+	tspace = hm.get_tangents(vertices, k = 16, double = False)
 
-	vertices = [0] * (M * K)
+	f, ax = plt.subplots(1, 3)
+	ax[0].scatter(vertices[:,0], vertices[:,1], marker='.', c=tspace[:,3])
+	ax[0].invert_yaxis()
+	idx = np.argwhere(tspace[:,3] < 0.25).flatten()
+	print(idx.shape)
+	v = vertices[idx,:]
+	print(v.shape)
+	ax[1].scatter(v[:,0], v[:,1], marker='.')
+	ax[1].invert_yaxis()
+	
 
-	for k, l in enumerate(letters):
-		for m in range(M): 
-			idx = k * M + m
-			vertices[idx] = get_image2(l, m, im_size)[0]
-
-
-	k = 20
-	r = 2 * 1.01 * math.sqrt(2) / im_size
-	w = 0
-
-	plot_difference(vertices, k = k, r = r, w = w)
-
-	# f, ax = plt.subplots(3,M)
-	# for m in range(M):
-	# 	plot_curve_color(vertices[m], plt = ax[0][m], k = k, r = r, w = w)
-	# 	plot_edges(vertices[m], plt = ax[1][m], k = k, r = r, w = w)
-	# 	plot_barcode(vertices[m], plt = ax[2][m], k = k, r = r, w = w)
-
-	# plot_difference(vertices, plt=plt)
-
-	f, ax = plt.subplots(K,M)
-	for i, l in enumerate(letters):
-		for m in range(M):
-			idx = i * M + m
-			# ax[i][m].imshow(vertices[idx])
-			# plot_curve_color(vertices[idx], plt = ax[i][m],  k = k, r = r, w = w)
-			# plot_edges(vertices[idx], plt = ax[i][m],  k = k, r = r, w = w)
-			plot_barcode(vertices[idx], plt = ax[i][m],  k = k, r = r, w = w)
-	# A = np.zeros((5,5))
-	# edges = np.array([[0,1],[1,2],[1,3],[2,3],[3,4]])
-	# A[edges[:,0], edges[:,1]] = 1
-	# A[edges[:,1], edges[:,0]] = 1
-	# print(A)
-	# print(np.argwhere(np.diagonal(A.dot(A).dot(A))))
-
-	# print(np.argwhere(np.bincount(edges[:,0])>1).flatten())
-
-
-	# N_grid = 5
-	# plt.imshow(im)
-	# M,N = im.shape
-
-	# grid = np.mgrid[0:N_grid, 0:N_grid]
-	# x = grid[0] * N/N_grid + N/(2 * N_grid)
-	# y = grid[1] * M/N_grid + M/(2 * N_grid)
-	# plt.scatter(x, y, marker='+')
-
+	ax = plt.gcf().add_subplot('133', projection='3d')
+	ax.scatter(xs=tspace[:,0], ys=tspace[:,1], zs=tspace[:,2], c=tspace[:,3])
+	ax.invert_yaxis()
 
 	plt.show()
-	return
+	return	
 
+def run(): 
+	test_tangent_space()
 # ---------------------------------------------------------------------------------
 
 run()
