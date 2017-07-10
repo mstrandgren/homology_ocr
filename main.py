@@ -284,33 +284,42 @@ def test_distances():
 
 
 
-def test_witness_complex():
+def test_witness_complex_2d():
 	N = 200
 	N_s = 20
 	k = int(N/5)
 	w = .5
 	r = .6
-	vertices = get_image('A', 2, size=200, sample_size=N)[0]
-	tangents = hm.find_tangents(vertices, k)
-	curve = hm.get_curve(vertices, k = k, w = w)
-	sparse = sparse_sample(vertices, N_s)
-	landmarks = vertices[sparse,:]
-	t_s = tangents[sparse]
-	c_s = curve[sparse]
-
+	vertices = get_image('V', 2, size=200, sample_size=N)[0]
+	edges, landmarks, sparse = hm.witness_complex_2d(vertices, N_s)
 
 	plt.scatter(vertices[:,0], vertices[:,1], marker='.', c='gray')
 	plt.scatter(landmarks[:,0], landmarks[:,1], marker='+', c='red')
-
-	D = spatial.distance.cdist(vertices, landmarks)
-	print(D.shape)
-	closest = np.argsort(D, axis=1)
-	edges = closest[:,:2]
-	edges = hm.remove_duplicate_edges(edges)
 	for edge in edges:
 		plt.plot(landmarks[edge,0], landmarks[edge,1], lw = 1, c = 'blue')
 
+	plt.gca().invert_yaxis()
 	plt.show()
+
+
+def test_witness_complex_4d():
+	N = 200
+	N_s = 20
+	k = int(N/5)
+	w = .5
+	r = .6
+	vertices = get_image('V', 2, size=200, sample_size=N)[0]
+	tangents = hm.find_tangents(vertices, k)
+	edges, landmarks, sparse = hm.witness_complex_4d(vertices, tangents, w, N_s)
+
+	plt.scatter(vertices[:,0], vertices[:,1], marker='.', c='gray')
+	plt.scatter(landmarks[:,0], landmarks[:,1], marker='+', c='red')
+	for edge in edges:
+		plt.plot(landmarks[edge,0], landmarks[edge,1], lw = 1, c = 'blue')
+
+	plt.gca().invert_yaxis()
+	plt.show()
+
 
 def run(): 
 	# test_image()
@@ -322,8 +331,8 @@ def run():
 	# test_barcode()
 	# test_distances()
 	# test_filtration()
-	test_witness_complex()
-
+	test_witness_complex_2d()
+	# test_witness_complex_4d()
 
 # Todo: 
 #  - Witness complex?

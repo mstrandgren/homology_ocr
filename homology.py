@@ -128,6 +128,26 @@ if __name__ == "__main__":
 
 # ---------------------------------------------------------------------------------
 
+def witness_complex_2d(vertices, N_s):
+	sparse = sparse_sample(vertices, N_s)
+	landmarks = vertices[sparse,:]
+	D = spatial.distance.cdist(vertices, landmarks)
+	closest = np.argsort(D, axis=1)
+	edges = closest[:,:2]
+	edges = remove_duplicate_edges(edges)
+	return edges, landmarks, sparse
+
+def witness_complex_4d(vertices, tangents, w, N_s):
+	tspace = get_tspace(vertices, tangents, w)
+	sparse = sparse_sample(tspace, N_s)
+	landmarks = tspace[sparse,:]
+	D = spatial.distance.cdist(tspace, landmarks)
+	closest = np.argsort(D, axis=1)
+	edges = closest[:,:2]
+	edges = remove_duplicate_edges(edges)
+	return edges, landmarks, sparse
+
+
 def rips_complex(vertices, tangents, r, w):
 	"""
 	Draw edges from all points point to all neighbors within radius r
@@ -151,6 +171,7 @@ def rips_complex_for_point(idx, points, kd_tree, r):
 	neighbors_idx = np.delete(neighbors_idx, np.argwhere(neighbors_idx==idx))
 	N = neighbors_idx.shape[0]
 	return np.array([np.ones(N).astype(int) * idx, neighbors_idx.T])
+
 
 def remove_duplicate_edges(edges):
 	"""
