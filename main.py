@@ -346,18 +346,14 @@ def test_delaunay():
 	plt.show()
 
 
-def test_alpha(): 
+def test_alpha_2d(): 
 	N = 200
 	N_s = 100
 	k = int(N/5)
 	w = .5
 	r = .15
 	vertices = get_image('B', 2, size=200, sample_size=N)[0]
-	sparse = sparse_sample(vertices, N_s)
-
-	v_s = vertices[sparse,:]
-	edges = hm.alpha_complex_2d(v_s, r)
-
+	edges, v_s, _ = hm.alpha_complex_2d(vertices, r, N_s)
 	plt.scatter(vertices[:,0], vertices[:,1], marker='.', c='gray')
 	plt.scatter(v_s[:,0], v_s[:,1], marker='+', c='red')
 	for edge in edges:
@@ -366,6 +362,22 @@ def test_alpha():
 	plt.gca().invert_yaxis()
 	plt.show()
 
+def test_alpha_4d(): 
+	N = 200
+	N_s = 100
+	k = int(N/5)
+	w = .2
+	r = .15
+	vertices = get_image('B', 2, size=200, sample_size=N)[0]
+	tangents = hm.find_tangents(vertices, k)
+	edges, v_s, _ = hm.alpha_complex_4d(vertices, tangents, r = r, w=w, N_s = N_s)
+	plt.scatter(vertices[:,0], vertices[:,1], marker='.', c='gray')
+	plt.scatter(v_s[:,0], v_s[:,1], marker='+', c='red')
+	for edge in edges:
+		plt.plot(v_s[edge,0], v_s[edge,1], lw = 1, c = 'blue')
+
+	plt.gca().invert_yaxis()
+	plt.show()
 
 def run(): 
 	# test_image()
@@ -380,7 +392,7 @@ def run():
 	# test_witness_complex_2d()
 	# test_witness_complex_4d()
 	# test_delaunay()
-	test_alpha()
+	test_alpha_4d()
 
 # Todo: 
 #  - Redo figures & settle for result
