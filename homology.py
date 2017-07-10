@@ -35,10 +35,6 @@ def get_rips_complex(vertices, tangents = None, k = 20, w = .5, r = .5):
 
 # ------------------------------------------------------------------------
 
-
-
-
-
 def get_tangent_space(vertices, k = 4, r = .6, w = .5, double = True): 
 	"""
 	Tangent space is (x, y, cos(v), sin(v))

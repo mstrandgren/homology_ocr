@@ -18,33 +18,6 @@ from man_data import data as manual_data
 
 
 
-def run_manual():
-	letters = 'ABD'
-	M = 5
-	K = len(letters)
-	vertices = [0] * (M * K)
-	edges = [0] * (M * K)
-
-	for k, l in enumerate(letters):
-		for m in range(M): 
-			idx = k * M + m
-			vertices[idx] = np.array(manual_data[l][m]['vertices'])
-			edges[idx] = np.array(manual_data[l][m]['edges'])
-
-	k = 20
-	r = 1
-	w = 0
-
-	plot_difference(vertices, edges, k = k, r = r, w = w)
-	# f, ax = plt.subplots(K,M)
-	# for i, l in enumerate(letters):
-	# 	for m in range(M):
-	# 		idx = i * M + m
-	# 		plot_curve_color(vertices[idx], plt = ax[i][m],  k = k, r = r, w = w)
-	plt.show()
-
-
-
 def plot_tangent_space_3d(tspace, subpl = '111'):
 	ax = plt.gcf().add_subplot(subpl, projection='3d')
 	ax.scatter(xs=tspace[:,0], ys=tspace[:,1], zs=tspace[:,2])
@@ -149,29 +122,32 @@ def test_edges():
 	N_s = 50
 	k = int(N/5)
 	w = .5
-	r = .5
-	vertices = get_image('C', 0, size=100, sample_size=N)[0]
+	r = .6
+	vertices = get_image('A', 2, size=200, sample_size=N)[0]
 	tangents = hm.find_tangents(vertices, k)
 	sparse = sparse_sample(vertices, N_s)
 	v_s = vertices[sparse,:]
 	t_s = tangents[sparse]
 	edges = hm.get_rips_complex(v_s, tangents=t_s, k = k, w = w, r = r)
+	plot_edges(v_s, edges, plt)
+	plt.gca().invert_yaxis()
+	plt.show()
+
+
+def plot_edges(v_s, edges, plt):
 	plt.scatter(v_s[:,0], v_s[:,1], marker = '.', c='gray', s=200)
 	for edge in edges:
 		plt.plot(v_s[edge, 0], v_s[edge, 1], lw = 1, c = 'blue')
 
-	plt.gca().invert_yaxis()
-
-	plt.show()
-
 
 def test_image():
 	N = 200
-	sample, vertices, image, original = get_image('D', 0, size=100, sample_size=N)
+	sample, vertices, image, original = get_image('C', 0, size=200, sample_size=N)
 
 	f, ax = plt.subplots(2,2)
 	ax[0][0].imshow(original)
 	ax[0][1].imshow(image)
+	ax[1][0].scatter(sample[:,0], sample[:,1], marker='.')
 	plt.show()
 
 
@@ -184,13 +160,14 @@ def test_sparse_sampling():
 	plt.scatter(sparse[:,0], sparse[:,1], marker='+', c='blue')
 	plt.show()
 
+
 def test_barcode():
 	N = 200
 	N_s = 50
 	k = int(N/5)
 	w = .5
 	r = .6
-	vertices = get_image('C', 1, size=100, sample_size=N)[0]
+	vertices = get_image('C', 1, size=200, sample_size=N)[0]
 	tangents = hm.find_tangents(vertices, k)
 	curve = hm.get_curve(vertices, k = k, w = w)
 	sparse = sparse_sample(vertices, N_s)
@@ -212,9 +189,49 @@ def test_barcode():
 	bc.plot_barcode_gant(b0, plt=plt_barcode)
 	plt.show()
 
+
+def test_filtration():
+	N = 200
+	N_s = 50
+	k = int(N/5)
+	w = .5
+	r = .6
+	vertices = get_image('A', 2, size=200, sample_size=N)[0]
+	tangents = hm.find_tangents(vertices, k)
+	curve = hm.get_curve(vertices, k = k, w = w)
+	sparse = sparse_sample(vertices, N_s)
+	v_s = vertices[sparse,:]
+	t_s = tangents[sparse]
+	c_s = curve[sparse]
+	edges = hm.get_rips_complex(v_s, tangents=t_s, k = k, w = w, r = r)
+	simplices, curve_lookup = hm.get_ordered_simplices(v_s, c_s, edges)
+	max_degree = np.max(simplices[:,3])
+	degree_step = math.ceil(max_degree/16.0)
+	verts_degree = simplices[simplices[:,4] == 0,0:3]
+
+	f, ax = plt.subplots(4,4, sharex=True, sharey=True)
+	ax[0][0].invert_yaxis()
+	for i in range(4):
+		for j in range(4):
+			idx = i*4 + j
+			deg = min(idx * degree_step, max_degree)
+			plot_simplices(simplices, deg, v_s, ax[i][j])
+
+			ax[i][j].set_title("κ={0:1.4f}".format(curve[verts_degree[deg,0]]), fontsize=8)
+			ax[i][j].set_xticklabels([])
+			ax[i][j].set_yticklabels([])
+	
+	plt.tight_layout()
+	plt.figure()
+	barcode = bc.get_barcode(simplices, degree_values=c_s[np.argsort(c_s)])
+	b0 = barcode[barcode[:,2] == 0, :]	
+	bc.plot_barcode_gant(b0, plt=plt)
+	plt.show()
+
+
 def test_distances():
-	letters = 'ABC'
-	M = 3
+	letters = 'A'
+	M = 5
 	N = 200
 	N_s = 50
 	k = int(N/5)
@@ -223,17 +240,24 @@ def test_distances():
 
 	barcodes = []
 
+	f, bax = plt.subplots(len(letters),M)
+	f, iax = plt.subplots(len(letters),M)
+
+
 	for i, letter in enumerate(letters):
 		print("Doing {0}".format(letter))
-		for j in range(1, M+1):
+		for j in range(0, M):
 			print("Doing {0}-{1}".format(letter, j))
 			idx = i * M + j
-			vertices = get_image(letter, 1, size=200, sample_size=N)[0]
+			vertices = get_image(letter, j, size=200, sample_size=N)[0]
 			v, t, c, e = hm.get_all(vertices, N_s = N_s, k = k, r = r, w = w)
 			ordered_simplices = hm.get_ordered_simplices(v, c, e)[0]
 			b = bc.get_barcode(ordered_simplices, degree_values=c[np.argsort(c)])
 			b = b[b[:, 2] == 0, :]
 			barcodes.append(b)
+			bc.plot_barcode_gant(b, plt=bax[j])
+			plot_edges(v, e, iax[j])
+
 
 	print("Doing diffs...")
 	M_b = len(barcodes)
@@ -242,10 +266,14 @@ def test_distances():
 	for i in range(M_b):
 		for j in range(M_b):
 			diffs[i,j] = bc.barcode_diff(barcodes[i], barcodes[j], inf=inf)
+			print("Diff ({0},{1}) = {2:1.3f}".format(i, j, diffs[i,j]))
 
-	dmax = np.max(diffs[diffs < inf/100]) * 1.1
+	dmax = np.max(diffs[diffs < inf/100]) * 1.1 + 1
 	diffs[diffs > inf/100] = dmax
+	plt.figure()
 	plt.imshow(diffs, cmap='gray')
+	plt.gca().set_xticklabels(list('-' + letters))
+	plt.gca().set_yticklabels(list('-' + letters))
 	plt.show()
 
 
@@ -258,6 +286,7 @@ def run():
 	# test_sparse_sampling()
 	# test_barcode()
 	test_distances()
+	# test_filtration()
 
 
 

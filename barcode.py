@@ -154,7 +154,7 @@ def barcode_diff(bar1, bar2, inf = None):
 	matched_sum = np.sum(result[i,j])
 	nonmatched_sum = np.sum(l2[nonmatched])
 
-	print(result)
+	# print(result)
 	return matched_sum + nonmatched_sum + inf_sum
 
 
