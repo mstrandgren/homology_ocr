@@ -236,10 +236,10 @@ def test_filtration():
 
 
 def test_distances():
-	letters = 'A'
+	letters = 'ABCDE'
 	M = 5
-	N = 200
-	N_s = 50
+	N = 500
+	N_s = 30
 	k = int(N/5)
 	w = .5
 	r = .6
@@ -255,14 +255,16 @@ def test_distances():
 		for j in range(0, M):
 			print("Doing {0}-{1}".format(letter, j))
 			idx = i * M + j
-			vertices = get_image(letter, j, size=200, sample_size=N)[0]
-			v, t, c, e = hm.get_all(vertices, N_s = N_s, k = k, r = r, w = w)
+			vertices = get_image(letter, j, size=100, sample_size=N)[0]
+			# v, t, c, e = hm.get_all_rips(vertices, N_s = N_s, k = k, r = r, w = w)
+			v, t, c, e = hm.get_all_witness_4d(vertices, N_s = N_s, k = k, r = r, w = w)
+			# v, t, c, e = hm.get_all_witness_4d(vertices, N_s = N_s, k = k, r = r, w = w)
 			ordered_simplices = hm.get_ordered_simplices(v, c, e)[0]
 			b = bc.get_barcode(ordered_simplices, degree_values=c[np.argsort(c)])
-			b = b[b[:, 2] == 0, :]
+			# b = b[b[:, 2] == 0, :]
 			barcodes.append(b)
-			bc.plot_barcode_gant(b, plt=bax[j])
-			plot_edges(v, e, iax[j])
+			bc.plot_barcode_gant(b, plt=bax[i][j])
+			plot_edges(v, e, iax[i][j])
 
 
 	print("Doing diffs...")
@@ -285,16 +287,18 @@ def test_distances():
 
 
 def test_witness_complex_2d():
-	N = 200
-	N_s = 20
+	N = 300
+	N_s = 50
 	k = int(N/5)
 	w = .5
 	r = .6
-	vertices = get_image('V', 2, size=200, sample_size=N)[0]
+	vertices = get_image('B', 0, size=100, sample_size=N)[0]
 	edges, landmarks, sparse = hm.witness_complex_2d(vertices, N_s)
 
 	plt.scatter(vertices[:,0], vertices[:,1], marker='.', c='gray')
 	plt.scatter(landmarks[:,0], landmarks[:,1], marker='+', c='red')
+	
+	# hm.remove_small_cycles(landmarks, edges, 0)
 	for edge in edges:
 		plt.plot(landmarks[edge,0], landmarks[edge,1], lw = 1, c = 'blue')
 
@@ -321,6 +325,48 @@ def test_witness_complex_4d():
 	plt.show()
 
 
+def test_delaunay():
+	N = 200
+	N_s = 50
+	k = int(N/5)
+	w = .5
+	r = .6
+	vertices = get_image('B', 2, size=200, sample_size=N)[0]
+	sparse = sparse_sample(vertices, N_s)
+
+	v_s = vertices[sparse,:]
+	edges = hm.delaunay_complex_2d(v_s)
+	
+	plt.scatter(vertices[:,0], vertices[:,1], marker='.', c='gray')
+	plt.scatter(v_s[:,0], v_s[:,1], marker='+', c='red')
+	for edge in edges:
+		plt.plot(v_s[edge,0], v_s[edge,1], lw = 1, c = 'blue')
+
+	plt.gca().invert_yaxis()
+	plt.show()
+
+
+def test_alpha(): 
+	N = 200
+	N_s = 100
+	k = int(N/5)
+	w = .5
+	r = .15
+	vertices = get_image('B', 2, size=200, sample_size=N)[0]
+	sparse = sparse_sample(vertices, N_s)
+
+	v_s = vertices[sparse,:]
+	edges = hm.alpha_complex_2d(v_s, r)
+
+	plt.scatter(vertices[:,0], vertices[:,1], marker='.', c='gray')
+	plt.scatter(v_s[:,0], v_s[:,1], marker='+', c='red')
+	for edge in edges:
+		plt.plot(v_s[edge,0], v_s[edge,1], lw = 1, c = 'blue')
+
+	plt.gca().invert_yaxis()
+	plt.show()
+
+
 def run(): 
 	# test_image()
 	# test_tangent()
@@ -331,11 +377,12 @@ def run():
 	# test_barcode()
 	# test_distances()
 	# test_filtration()
-	test_witness_complex_2d()
+	# test_witness_complex_2d()
 	# test_witness_complex_4d()
+	# test_delaunay()
+	test_alpha()
 
 # Todo: 
-#  - Witness complex?
 #  - Redo figures & settle for result
 
 

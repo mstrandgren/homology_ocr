@@ -6,7 +6,26 @@ import barcode as bc
 import matplotlib.pyplot as plt
 from data import sparse_sample
 
-def get_all(vertices, N_s, k, w, r):
+
+def get_all_witness_4d(vertices, N_s, k, w, r):
+	tangents = find_tangents(vertices, k)
+	curve = find_curve(vertices, tangents, k, w)
+	edges, v_s, sparse = witness_complex_4d(vertices, tangents, w = w, N_s = N_s)
+	t_s = tangents[sparse]
+	c_s = curve[sparse]
+	return v_s, t_s, c_s, edges
+
+
+def get_all_witness_2d(vertices, N_s, k, w, r):
+	tangents = find_tangents(vertices, k)
+	curve = find_curve(vertices, tangents, k, w)
+	edges, v_s, sparse = witness_complex_2d(vertices, N_s)
+	# edges = remove_small_cycles(v_s, edges)
+	t_s = tangents[sparse]
+	c_s = curve[sparse]
+	return v_s, t_s, c_s, edges
+
+def get_all_rips(vertices, N_s, k, w, r):
 	tangents = find_tangents(vertices, k)
 	curve = find_curve(vertices, tangents, k, w)
 	sparse = sparse_sample(vertices, N_s)
@@ -128,6 +147,19 @@ if __name__ == "__main__":
 
 # ---------------------------------------------------------------------------------
 
+
+def delaunay_complex_2d(v_s):
+	tri = spatial.Delaunay(v_s)
+	edges = np.concatenate([tri.simplices[:,:2], tri.simplices[:,1:], tri.simplices[:,[2,0]]], axis=0)
+	return edges
+
+def alpha_complex_2d(v_s, r):
+	edges = delaunay_complex_2d(v_s)
+	edge_lengths = np.linalg.norm(v_s[edges[:,0],:] - v_s[edges[:,1],:], axis=1)
+	edges = edges[edge_lengths < r, :]
+	return edges
+
+
 def witness_complex_2d(vertices, N_s):
 	sparse = sparse_sample(vertices, N_s)
 	landmarks = vertices[sparse,:]
@@ -136,6 +168,7 @@ def witness_complex_2d(vertices, N_s):
 	edges = closest[:,:2]
 	edges = remove_duplicate_edges(edges)
 	return edges, landmarks, sparse
+
 
 def witness_complex_4d(vertices, tangents, w, N_s):
 	tspace = get_tspace(vertices, tangents, w)
@@ -189,13 +222,27 @@ def remove_small_cycles(vertices, edges, r):
 	A[edges[:,1], edges[:,0]] = 1
 	bad_verts = np.argwhere(np.diagonal(A.dot(A).dot(A))).flatten()
 	D = spatial.distance_matrix(vertices[bad_verts,:], vertices[bad_verts,:])
-	A_bad = A[bad_verts,:][:,bad_verts]
-	bad_edges = bad_verts[np.argwhere((D * A_bad) > r / math.sqrt(2))]
-	unique_bad_edges = bad_edges[bad_edges[:,0] < bad_edges[:,1]]
-	unique_bad_edges_c = to_complex(unique_bad_edges)
-	edges_c = to_complex(edges)
-	new_edges_c = np.setdiff1d(edges_c, unique_bad_edges_c)
-	return to_real(new_edges_c)
+	if D.size == 0: 
+		print("No cycles")
+		return edges
+
+	print(bad_verts)
+	print(D)
+	D[D == 0] = 1e14
+	print(D)
+	a = np.argmin(D, axis = 1)
+	print(a)
+	edges = np.array([bad_verts, bad_verts[a]])
+	print(edges)
+	# print(a)
+
+	# A_bad = A[bad_verts,:][:,bad_verts]
+	# bad_edges = bad_verts[np.argwhere((D * A_bad) > r / math.sqrt(2))]
+	# unique_bad_edges = bad_edges[bad_edges[:,0] < bad_edges[:,1]]
+	# unique_bad_edges_c = to_complex(unique_bad_edges)
+	# edges_c = to_complex(edges)
+	# new_edges_c = np.setdiff1d(edges_c, unique_bad_edges_c)
+	# return to_real(new_edges_c)
 
 # ---------------------------------------------------------------------------------
 
