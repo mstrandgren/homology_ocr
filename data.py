@@ -55,7 +55,8 @@ def get_image(letter, number, size, sample_size = 200):
 	image = mp.skeletonize(image)
 	vertices = np.flip(np.array(np.nonzero(image)).T, axis=1)
 	vertices = vertices * 2.0 / size - 1
-	sample = vertices
+	N = vertices.shape[0]
+	sample = vertices[np.random.choice(np.arange(N), size=sample_size),:]
 	return sample, vertices, image, original
 
 
@@ -76,7 +77,7 @@ def get_image2(letter, number, size=50):
 def sparse_sample(point_cloud, N):
 	if N == point_cloud.shape[0]:
 		return point_cloud
-		
+
 	# Returns indices
 	D = spatial.distance.squareform(spatial.distance.pdist(point_cloud))
 	idx = 0

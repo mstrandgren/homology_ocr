@@ -152,23 +152,6 @@ def rips_complex_for_point(idx, points, kd_tree, r):
 	N = neighbors_idx.shape[0]
 	return np.array([np.ones(N).astype(int) * idx, neighbors_idx.T])
 
-
-
-def find_edges(tangent_space, vertices, r):
-	"""
-	returns Nx2 matrix, array elements are indices of the vertices that bound the edge
-	"""
-	kd_tree_4d = spatial.KDTree(tangent_space)
-
-	N = tangent_space.shape[0]
-	find_edges_partial = partial(find_edges_for_point, points=tangent_space, kd_tree=kd_tree_4d)
-	find_edges_array = np.vectorize(find_edges_partial, otypes=[np.ndarray])
-	all_edges = np.concatenate(find_edges_array(np.arange(0,N)), axis=1).T
-	edges = remove_duplicate_edges(all_edges)
-	edges = remove_small_cycles(vertices, edges, r)
-	return edges
-
-
 def remove_duplicate_edges(edges):
 	"""
 	edges is a column array
@@ -176,14 +159,6 @@ def remove_duplicate_edges(edges):
 	c = to_complex(np.sort(edges, axis=1))
 	unique_idx = np.unique(c, return_index=True)[1]
 	return edges[unique_idx, :]
-
-
-def find_edges_for_point(idx, points, kd_tree):
-	x = points[idx,:]
-	neighbors_idx = np.array(kd_tree.query_ball_point(x, 1))
-	neighbors_idx = np.delete(neighbors_idx, np.argwhere(neighbors_idx==idx))
-	N = neighbors_idx.shape[0]
-	return np.array([np.ones(N).astype(int) * idx, neighbors_idx.T])
 
 
 def remove_small_cycles(vertices, edges, r): 
@@ -235,13 +210,11 @@ def find_curve(vertices, tangents, k, w):
 	w: weight to tangent distance
 	"""
 	N = vertices.shape[0]
-	# print(tangents.shape)
 	tspace = get_tspace(vertices, tangents, w)
 	kd_tree = spatial.KDTree(tspace)
 	find_curve_partial = partial(find_curve_for_point, k=k, tangents=tangents, tspace=tspace, kd_tree=kd_tree)
 	curve = np.apply_along_axis(find_curve_partial, arr=np.arange(N).reshape(1,N), axis=0).T
 	return curve
-
 
 
 def find_curve_for_point(idx, tspace, tangents, k, kd_tree):
@@ -251,7 +224,6 @@ def find_curve_for_point(idx, tspace, tangents, k, kd_tree):
 	x = tspace[idx, :]
 	(distances, neighbors_idx) = kd_tree.query(x, k)
 	neighbors = vertices[neighbors_idx.flatten(),:2]
-	# plt.scatter(neighbors[:,0], neighbors[:,1], marker='+', c='blue')
 
 	v = tangents[idx]
 	x_0 = np.mean(neighbors, axis=0)
@@ -275,24 +247,6 @@ def get_tspace(vertices, tangents, w):
 	return np.concatenate([vertices, w * np.cos(tangents * 2).reshape(N,1), w * np.sin(tangents * 2).reshape(N,1)], axis = 1)
 
 # ------------------------------------------------------------------------
-
-def fitQuad(data):
-	def f(B, x):
-		return B[0]*x*x + B[1]*x + B[2]
-	quad = odr.Model(f)
-	data = odr.Data(data[:,0], data[:,1])
-	o = odr.ODR(data, quad, beta0=[1,0,0])
-	out = o.run()
-	return out.beta	
-
-def fitODR(data):
-	def f(B, x):
-		return B[0]*x + B[1]
-	linear = odr.Model(f)
-	data = odr.Data(data[:,0], data[:,1])
-	o = odr.ODR(data, linear, beta0=[1,0])
-	out = o.run()
-	return out.beta
 
 # ------------------------------------------------------------------------
 

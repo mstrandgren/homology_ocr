@@ -18,6 +18,32 @@ from man_data import data as manual_data
 
 
 
+def test_image():
+	N = 200
+	N_s = 50
+	sample, vertices, image, original = get_image('A', 1, size=200, sample_size=N)
+	f, ax = plt.subplots(2,2)
+	ax[0][0].imshow(original)
+	ax[0][1].imshow(image)
+	ax[1][0].scatter(sample[:,0], sample[:,1], marker='.')
+	ax[1][0].invert_yaxis()
+	sparse_idx = sparse_sample(sample, N_s)
+	sparse = sample[sparse_idx, :]
+	ax[1][1].scatter(sparse[:,0], sparse[:,1], marker='.')
+	ax[1][1].invert_yaxis()
+	plt.show()
+
+
+def test_sparse_sampling():
+	N = 500
+	vertices = get_image_skeleton('P', 0, size=200, sample_size=N)[0]
+	plt.scatter(vertices[:,0], vertices[:,1], marker = '.', c='#eeeeee')
+
+	sparse = sparse_sample(vertices, 50)
+	plt.scatter(sparse[:,0], sparse[:,1], marker='+', c='blue')
+	plt.show()
+
+
 def plot_tangent_space_3d(tspace, subpl = '111'):
 	ax = plt.gcf().add_subplot(subpl, projection='3d')
 	ax.scatter(xs=tspace[:,0], ys=tspace[:,1], zs=tspace[:,2])
@@ -140,26 +166,6 @@ def plot_edges(v_s, edges, plt):
 		plt.plot(v_s[edge, 0], v_s[edge, 1], lw = 1, c = 'blue')
 
 
-def test_image():
-	N = 200
-	sample, vertices, image, original = get_image('C', 0, size=200, sample_size=N)
-
-	f, ax = plt.subplots(2,2)
-	ax[0][0].imshow(original)
-	ax[0][1].imshow(image)
-	ax[1][0].scatter(sample[:,0], sample[:,1], marker='.')
-	plt.show()
-
-
-def test_sparse_sampling():
-	N = 500
-	vertices = get_image_skeleton('P', 0, size=200, sample_size=N)[0]
-	plt.scatter(vertices[:,0], vertices[:,1], marker = '.', c='#eeeeee')
-
-	sparse = sparse_sample(vertices, 50)
-	plt.scatter(sparse[:,0], sparse[:,1], marker='+', c='blue')
-	plt.show()
-
 
 def test_barcode():
 	N = 200
@@ -277,6 +283,35 @@ def test_distances():
 	plt.show()
 
 
+
+def test_witness_complex():
+	N = 200
+	N_s = 20
+	k = int(N/5)
+	w = .5
+	r = .6
+	vertices = get_image('A', 2, size=200, sample_size=N)[0]
+	tangents = hm.find_tangents(vertices, k)
+	curve = hm.get_curve(vertices, k = k, w = w)
+	sparse = sparse_sample(vertices, N_s)
+	landmarks = vertices[sparse,:]
+	t_s = tangents[sparse]
+	c_s = curve[sparse]
+
+
+	plt.scatter(vertices[:,0], vertices[:,1], marker='.', c='gray')
+	plt.scatter(landmarks[:,0], landmarks[:,1], marker='+', c='red')
+
+	D = spatial.distance.cdist(vertices, landmarks)
+	print(D.shape)
+	closest = np.argsort(D, axis=1)
+	edges = closest[:,:2]
+	edges = hm.remove_duplicate_edges(edges)
+	for edge in edges:
+		plt.plot(landmarks[edge,0], landmarks[edge,1], lw = 1, c = 'blue')
+
+	plt.show()
+
 def run(): 
 	# test_image()
 	# test_tangent()
@@ -285,14 +320,12 @@ def run():
 	# test_edges()
 	# test_sparse_sampling()
 	# test_barcode()
-	test_distances()
+	# test_distances()
 	# test_filtration()
-
+	test_witness_complex()
 
 
 # Todo: 
-#  - Why does size matter?
-#  - Well behaved data set?
 #  - Witness complex?
 #  - Redo figures & settle for result
 
