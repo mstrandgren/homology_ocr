@@ -84,8 +84,11 @@ def plot_curve_color(vertices, plt = plt, k = 4, r = .6, w = .5):
 		plt.gca().set_yticklabels([])
 
 
-def plot_filtration(vertices, edges = None, plt = plt, k=4, r=.6, w=.5, annotate = False): 
-	simplices, curve = hm.test_filtration(vertices, edges, k = k, r = r, w = w)
+def plot_filtration(vertices, edges = None, plt = plt, N_s = 50, k=4, r=.6, w=.5, annotate = False): 
+	vertices, tangents, curve, _edges = hm.get_all_rips_4d(vertices, N_s, k, w, r)
+	if edges is None: edges = _edges
+	simplices = hm.get_ordered_simplices(vertices, curve, edges)
+
 	f, ax = plt.subplots(4,4, sharex=True, sharey=True)
 	max_degree = np.max(simplices[:,3])
 	degree_step = math.ceil(max_degree/16.0)

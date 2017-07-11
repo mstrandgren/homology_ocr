@@ -4,34 +4,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-from scipy import odr, spatial
-
 import homology as hm
 import barcode as bc
-from test_plots import *
 from data import *
-from man_data import data as manual_data
-
-# AD
-# BOPQR
-# CEFGHIJKLMNSTUVXYZ
+from utils import sparse_sample
 
 
 
-def test_image():
-	N = 200
-	N_s = 50
-	sample, vertices, image, original = get_image('A', 1, size=200, sample_size=N)
-	f, ax = plt.subplots(2,2)
-	ax[0][0].imshow(original)
-	ax[0][1].imshow(image)
-	ax[1][0].scatter(sample[:,0], sample[:,1], marker='.')
-	ax[1][0].invert_yaxis()
-	sparse_idx = sparse_sample(sample, N_s)
-	sparse = sample[sparse_idx, :]
-	ax[1][1].scatter(sparse[:,0], sparse[:,1], marker='.')
-	ax[1][1].invert_yaxis()
-	plt.show()
 
 
 def test_sparse_sampling():
@@ -380,7 +359,7 @@ def test_alpha_4d():
 	plt.show()
 
 def run(): 
-	# test_image()
+	test_image()
 	# test_tangent()
 	# test_curve()
 	# test_edges_for_point()
@@ -392,7 +371,7 @@ def run():
 	# test_witness_complex_2d()
 	# test_witness_complex_4d()
 	# test_delaunay()
-	test_alpha_4d()
+	# test_alpha_4d()
 
 # Todo: 
 #  - Redo figures & settle for result
