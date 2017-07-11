@@ -2,7 +2,7 @@ import numpy as np
 from scipy.spatial import distance
 
 
-def get_tspace(vertices, tangents, w): 
+def get_tspace(vertices, tangents, w = 1): 
 	N = vertices.shape[0]
 	return np.concatenate([vertices, w * np.cos(tangents * 2).reshape(N,1), w * np.sin(tangents * 2).reshape(N,1)], axis = 1)
 

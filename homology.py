@@ -6,6 +6,23 @@ from tangents import find_tangents, find_curve
 from triangulation import *
 
 
+def get_all(vertices, N_s, k, w, r, triangulation, edges = None):
+	if triangulation == 'witness4':
+		v, t, c, e = get_all_witness_4d(vertices, N_s, k, w, r)
+	elif triangulation == 'witness2':
+		v, t, c, e = get_all_witness_2d(vertices, N_s, k, w, r)
+	elif triangulation == 'rips4':
+		v, t, c, e = get_all_rips_4d(vertices, N_s, k, w, r)
+	elif triangulation == 'rips2':
+		v, t, c, e = get_all_rips_2d(vertices, N_s, k, w, r)
+	else:
+		raise Error("Unknown triangulation: {0}".format(triangulation))
+
+	if edges is not None: e = edges
+	simplices = get_ordered_simplices(v, c, e)
+	return v, t, c, e, simplices
+
+
 def get_all_witness_4d(vertices, N_s, k, w, r):
 	tangents = find_tangents(vertices, k)
 	curve = find_curve(vertices, tangents, k, w)

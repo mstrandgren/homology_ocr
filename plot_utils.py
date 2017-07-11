@@ -3,91 +3,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import homology as hm
 import barcode as bc
+from utils import get_tspace
 
 
-def plot_vertices(vertices, plt = plt):
-	plt.scatter(vertices[:,0], vertices[:,1], marker='.')
-
-
-def plot_tangent_space(vertices, plt = plt, k=4, r=.6, w=.5, annotate = False):
-	tangent_space, tangents, _ = hm.get_tangent_space(vertices, k = k, r = r, w = w, double=False)
-	for idx, x in enumerate(tangent_space): 
-		# plt.plot([x[0], x[0] + x[2]], [x[1], x[1] + x[3]], lw = 1, c='gray')
-		plt.arrow(x = x[0], y = x[1], dx = x[2], dy = x[3], lw = .3, head_width=0.02, head_length=0.04, fc='blue', ec='blue')
-		if annotate:
-			plt.annotate("{0:1.2f}".format(tangents[idx]/math.pi), (x[0], x[1]))
-
-	plt.scatter(1 / r * vertices[:,0], 1 / r * vertices[:,1], marker = '.', c='k', s=3)
-
-	try: 
-		plt.invert_yaxis()
-		plt.set_xticklabels([])
-		plt.set_yticklabels([])
-	except:
-		plt.gca().invert_yaxis()
-		plt.gca().set_xticklabels([])
-		plt.gca().set_yticklabels([])
-
-
-def plot_edges(vertices, edges = None, plt = plt, k=4, r=.6, w=.5, annotate = False):
-	"""
-	Fun settings for w,r: (0,.5), (0,.6), (0,3), (100, 55)
-	"""
-	if edges is None:
-		edges = hm.test_edges(vertices, k = k, r = r, w = w)
-
-	plt.scatter(vertices[:,0],vertices[:,1], marker='.')
-	for edge in edges:
-		plt.plot(vertices[edge, 0], vertices[edge, 1], lw = 1, c = 'gray')
-		if annotate:
-			plt.annotate("{0}".format(edge[0]), (vertices[edge[0],0], vertices[edge[0],1]))
-			plt.annotate("{0}".format(edge[1]), (vertices[edge[1],0], vertices[edge[1],1]))			
-	
-	plt.scatter(vertices[:,0],vertices[:,1], marker='.')
-	set_limits(1.1, plt)
-
-	try: 
-		plt.set_xticklabels([])
-		plt.set_yticklabels([])
-		plt.invert_yaxis()
-	except:
-		plt.gca().invert_yaxis()
-		plt.gca().set_xticklabels([])
-		plt.gca().set_yticklabels([])
-
-	return edges
-
-
-def plot_curve(vertices, plt = plt, k = 4, r = .6, w = .5):
-	tangent_space, tangents, curve = hm.get_tangent_space(vertices, k = k, r = r, w = w, double=False)
-	for idx, x in enumerate(tangent_space): 
-		normal = curve[idx] *curve[idx] * np.array([ -x[3], x[2] ])
-		plt.plot([x[0], x[0] + normal[0]], [x[1], x[1] + normal[1]], lw = 1, c='gray')
-
-	plt.scatter(1 / r * vertices[:,0], 1 / r * vertices[:,1], marker = '.')
-	set_limits(1 / r + 5, plt)
-
-
-def plot_curve_color(vertices, plt = plt, k = 4, r = .6, w = .5):
-	tangent_space, tangents, curve = hm.get_tangent_space(vertices, k = k, r = r, w = w, double=False)
-	
-	# plt.set_cmap('plasma')
-	plt.scatter(vertices[:,0], vertices[:,1], marker = '.', c=curve, cmap='plasma', s=200)
-	set_limits(1.1, plt)
-	try: 
-		plt.set_xticklabels([])
-		plt.set_yticklabels([])
-		plt.invert_yaxis()
-	except:
-		plt.gca().invert_yaxis()
-		plt.gca().set_xticklabels([])
-		plt.gca().set_yticklabels([])
-
-
-def plot_filtration(vertices, edges = None, plt = plt, N_s = 50, k=4, r=.6, w=.5, annotate = False): 
-	vertices, tangents, curve, _edges = hm.get_all_rips_4d(vertices, N_s, k, w, r)
-	if edges is None: edges = _edges
-	simplices = hm.get_ordered_simplices(vertices, curve, edges)
+def plot_filtration(vertices, edges = None, plt = plt, N_s = 50, k=4, r=.6, w=.5, annotate = False, triangulation = 'rips4'): 
+	vertices, tangents, curve, edges, simplices = hm.get_all(vertices, N_s, k, w, r, triangulation=triangulation, edges=edges)
 
 	f, ax = plt.subplots(4,4, sharex=True, sharey=True)
 	max_degree = np.max(simplices[:,3])
@@ -100,21 +20,83 @@ def plot_filtration(vertices, edges = None, plt = plt, N_s = 50, k=4, r=.6, w=.5
 			plot_simplices(simplices, deg, vertices, ax[i][j], annotate = annotate)
 
 			ax[i][j].set_title("κ={0:1.4f}".format(curve[verts_degree[deg,0]]), fontsize=8)
-			ax[i][j].set_xticklabels([])
-			ax[i][j].set_yticklabels([])
+			ax[i][j].set_xticks([])
+			ax[i][j].set_yticks([])
 
 	set_limits(1.1, plt)
 
 
-def plot_barcode(vertices, edges = None, plt = plt, k=4, r=.6, w=.5, annotate = False):
-	barcode, _ = hm.test_barcode(vertices, edges, k = k, r = r, w = w)
-	np.set_printoptions(precision=3, suppress=True)
-	bc.plot_barcode_gant(barcode, plt = plt, annotate = annotate)
-
+def plot_barcode(vertices, edges = None, plt = plt, N_s = 50, k=4, r=.6, w=.5, annotate = False, triangulation='rips4'):
+	vertices, tangents, curve, edges, simplices = hm.get_all(vertices, N_s, k, w, r, triangulation=triangulation, edges=edges)
+	if edges is None: edges = _edges
+	simplices = hm.get_ordered_simplices(vertices, curve, edges)
+	barcode = bc.get_barcode(simplices, degree_values=curve[np.argsort(curve)])
+	plot_barcode_gant(barcode, plt = plt, annotate = annotate)
 	try: 
-		plt.set_yticklabels([])
+		plt.set_yticks([])
 	except:
-		plt.gca().set_yticklabels([])
+		plt.gca().set_yticks([])
+
+
+def plot_barcode_gant(barcode, plt, annotate=False):
+	bars = barcode[:,:3]
+	inf = np.max(bars[bars != math.inf]) + 1
+	markers = ('s', '.', 'x')
+	marker_size = (4,10,3)
+	for idx, row in enumerate(barcode):
+		start,end = row[:2]
+		if row[1] == math.inf: end = inf
+		plt.plot([start,end], [idx, idx], marker=markers[row[2].astype(int)], c='k', lw=1, ms=marker_size[row[2].astype(int)])
+		if annotate:
+			plt.annotate("{0:4.0f}".format(barcode[idx,3]), (start,idx), horizontalalignment='right')
+			plt.annotate("{0:4.0f}".format(barcode[idx,4]), (end,idx), horizontalalignment='left')
+
+	ax = get_axis(plt)
+	ax.set_xlim([-0.1 * inf, inf - 0.5])
+	ax.set_xticks(range(0,math.ceil(inf)))
+	ax.set_yticks([])
+
+
+def plot_tangents(vertices, plt = plt, k=4, annotate = False):
+	vertices, tangents, curve, edges, simplices = hm.get_all(vertices, N_s = 50, k = k, w = 1, r = 1, triangulation='rips4')
+	for idx, x in enumerate(vertices): 
+		plt.arrow(x = x[0], y = x[1], dx = .1*np.cos(tangents[idx]), dy = .1*np.sin(tangents[idx]), lw = .3, head_width=0.02, head_length=0.04, fc='blue', ec='blue')
+		if annotate:
+			plt.annotate("{0:1.2f}".format(tangents[idx]/math.pi), (x[0], x[1]))
+
+	plt.scatter(vertices[:,0], vertices[:,1], marker = '.', c='k', s=3)
+	std_plot(plt)
+
+
+def plot_curve(vertices, plt = plt, k = 4, w = .5):
+	vertices, tangents, curve, edges, simplices = hm.get_all(vertices, N_s = vertices.shape[0], k = k, w = w, r = 1, triangulation='rips4')
+	plt.scatter(vertices[:,0], vertices[:,1], marker = '.', c=curve, cmap='plasma', s=200)
+	std_plot(plt)
+
+
+def plot_triangulation(vertices, edges = None, plt = plt, N_s=50, k=4, r=.6, w=.5, annotate = False, triangulation = 'rips4d'):
+	"""
+	Fun settings for w,r: (0,.5), (0,.6), (0,3), (100, 55)
+	"""
+	vertices, tangents, curve, edges, simplices = hm.get_all(vertices, N_s = N_s, k = k, w = w, r = r, triangulation=triangulation)
+
+	for edge in edges:
+		plt.plot(vertices[edge, 0], vertices[edge, 1], lw = 1, c = 'gray', zorder=1)
+		# if annotate:
+		# 	plt.annotate("{0}".format(edge[0]), (vertices[edge[0],0], vertices[edge[0],1]))
+		# 	plt.annotate("{0}".format(edge[1]), (vertices[edge[1],0], vertices[edge[1],1]))			
+	
+	plt.scatter(vertices[:,0],vertices[:,1], marker='.', s=5, c='k', zorder=2)
+	std_plot(plt)
+
+
+
+
+
+# --------------------------------------------------------------------------------
+
+def plot_vertices(vertices, plt = plt):
+	plt.scatter(vertices[:,0], vertices[:,1], marker='.')
 
 
 def plot_difference(vertices, edges = None, plt = plt, k=4, r=.6, w=.5, inf=1e14):
@@ -167,5 +149,19 @@ def set_limits(l, plt):
 	except: 
 		plt.set_xlim(-l ,l)
 		plt.set_ylim(-l ,l)
+
+def get_axis(plt):
+	try:
+		return plt.gca()
+	except:
+		return plt
+
+def std_plot(plt):
+	ax = get_axis(plt)
+	ax.set_xlim(-1.1, 1.1)
+	ax.set_ylim(-1.1, 1.1)
+	ax.invert_yaxis()
+	ax.set_xticks([])
+	ax.set_yticks([])
 
 

@@ -13,7 +13,7 @@ def get_ellipse(N = 16, skew = 0.7):
 	return vertices, edges
 
 
-def get_image(letter, number, size, sample_size = 200, skeleton = True):
+def get_image(letter, number, size=200, sample_size=500, skeleton = True):
 	sample_idx = ord(letter) - ord('A') + 11
 	if well_behaved_letters.get(letter) is not None:
 		img_idx = well_behaved_letters[letter][number]

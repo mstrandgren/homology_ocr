@@ -9,11 +9,12 @@ from plot_utils import *
 
 
 def run():
-	# image_preprocessing()
-	ellipse_filtration()
+	# ellipse_filtration()
 	# ellipse_barcode()
 	# p_tangents()
-	# p_curve()
+	# puv_curve()
+	rips_test()
+	# image_preprocessing()
 
 def ellipse_filtration(): 
 	vertices, edges = get_ellipse(16, .5)
@@ -33,33 +34,53 @@ def ellipse_barcode():
 	r = 1
 	w = 0
 	# plot_edges(vertices, edges, plt, k = k, r = r, w = w)
-	plot_barcode(vertices, edges, plt, k = k, r = r, w = w)
+	plot_barcode(vertices, edges, plt, N_s = vertices.shape[0], k = k, r = r, w = w)
 	plt.tight_layout()
 	plt.show()
 
 
 def p_tangents(): 
-	vertices = get_image('P', 0)[0]
-	k = 16
-	r = 1
-	w = .1
-	plot_tangent_space(vertices, plt, k = k, r = r, w = w)
+	N = 500
+	N_s = 50
+	k = 20
+	r = .5
+	w = .6
+	vertices = get_image('P', 0, size=200, sample_size=N)[0]
+	plot_tangents(vertices, plt, k = k)
 	plt.show()
 
-def p_curve(): 
-	# vertices, edges = get_ellipse(16, .5)
-	P = get_image('P', 0)[0]
-	U = get_image('U', 0)[0]
-	V = get_image('V', 0)[0]
-	k = 16
-	r = 1
-	w = 0
+def puv_curve(): 
+	N = 500
+	N_s = 50
+	k = 100
+	r = .5
+	w = .6
+	P = get_image('P', 0, size=200, sample_size=N)[0]
+	U = get_image('U', 0, size=200, sample_size=N)[0]
+	V = get_image('V', 0, size=200, sample_size=N)[0]
 	f, ax = plt.subplots(1,3)
-	plot_curve_color(P, ax[0], k = k, r = r, w = w)
-	plot_curve_color(U, ax[1], k = k, r = r, w = w)
-	plot_curve_color(V, ax[2], k = k, r = r, w = w)
+	plot_curve(P, ax[0], k = k, w = w)
+	plot_curve(U, ax[1], k = k, w = w)
+	plot_curve(V, ax[2], k = k, w = w)
 
 	plt.show()
+
+
+def rips_test():
+	N = 500
+	N_s = 100
+	k = 20
+	r = .1
+	w = .6
+	P = get_image('P', 1, size=200, sample_size=N)[0]
+
+	f, ax = plt.subplots(1, 2)
+	plot_triangulation(P, plt=ax[0], N_s = N_s, k = k, r = 0.7, w = w, triangulation='rips4')
+	ax[0].set_title("Rips Tangent Complex")
+	plot_triangulation(P, plt=ax[1], N_s = N_s, k = k, r = 0.15, w = w, triangulation='rips2')
+	ax[1].set_title("Rips Vertex Complex")
+	plt.show()
+
 
 def image_preprocessing():
 	N = 500
