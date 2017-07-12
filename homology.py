@@ -15,6 +15,14 @@ def get_all(vertices, N_s, k, w, r, triangulation, edges = None):
 		v, t, c, e = get_all_rips_4d(vertices, N_s, k, w, r)
 	elif triangulation == 'rips2':
 		v, t, c, e = get_all_rips_2d(vertices, N_s, k, w, r)
+	elif triangulation == 'delaunay4':
+		v, t, c, e = get_all_delaunay_4d(vertices, N_s, k, w, r)
+	elif triangulation == 'delaunay2':
+		v, t, c, e = get_all_delaunay_2d(vertices, N_s, k, w, r)
+	elif triangulation == 'alpha4':
+		v, t, c, e = get_all_alpha_4d(vertices, N_s, k, w, r)
+	elif triangulation == 'alpha2':
+		v, t, c, e = get_all_alpha_2d(vertices, N_s, k, w, r)
 	else:
 		raise Error("Unknown triangulation: {0}".format(triangulation))
 
@@ -60,6 +68,42 @@ def get_all_rips_2d(vertices, N_s, k, w, r):
 	t_s = tangents[sparse]
 	c_s = curve[sparse]
 	edges = rips_complex_2d(v_s, r = r)
+	return v_s, t_s, c_s, edges
+
+
+def get_all_delaunay_4d(vertices, N_s, k, w, r):
+	tangents = find_tangents(vertices, k)
+	curve = find_curve(vertices, tangents, k, w)
+	edges, v_s, sparse = delaunay_complex_4d(vertices, tangents, w = w, N_s = N_s)
+	t_s = tangents[sparse]
+	c_s = curve[sparse]
+	return v_s, t_s, c_s, edges
+
+
+def get_all_delaunay_2d(vertices, N_s, k, w, r):
+	tangents = find_tangents(vertices, k)
+	curve = find_curve(vertices, tangents, k, w)
+	edges, v_s, sparse = delaunay_complex_2d(vertices, N_s)
+	t_s = tangents[sparse]
+	c_s = curve[sparse]
+	return v_s, t_s, c_s, edges
+
+
+def get_all_alpha_4d(vertices, N_s, k, w, r):
+	tangents = find_tangents(vertices, k)
+	curve = find_curve(vertices, tangents, k, w)
+	edges, v_s, sparse = alpha_complex_4d(vertices, tangents, r = r, w = w, N_s = N_s)
+	t_s = tangents[sparse]
+	c_s = curve[sparse]
+	return v_s, t_s, c_s, edges
+
+
+def get_all_alpha_2d(vertices, N_s, k, w, r):
+	tangents = find_tangents(vertices, k)
+	curve = find_curve(vertices, tangents, k, w)
+	edges, v_s, sparse = alpha_complex_2d(vertices, r = r, N_s = N_s)
+	t_s = tangents[sparse]
+	c_s = curve[sparse]
 	return v_s, t_s, c_s, edges
 
 # ------------------------------------------------------------------------

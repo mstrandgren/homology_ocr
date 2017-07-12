@@ -14,7 +14,10 @@ def run():
 	# p_tangents()
 	# puv_curve()
 	# rips_test()
-	image_preprocessing()
+	# delaunay_test()
+	alpha_test()
+	# delaunay_vs_alpha()
+	# image_preprocessing()
 
 def ellipse_filtration(): 
 	vertices, edges = get_ellipse(16, .5)
@@ -42,7 +45,7 @@ def ellipse_barcode():
 def p_tangents(): 
 	N = 500
 	N_s = 50
-	k = 20
+	k = 50
 	r = .5
 	w = .6
 	vertices = get_image('P', 0, size=200, sample_size=N)[0]
@@ -52,7 +55,7 @@ def p_tangents():
 def puv_curve(): 
 	N = 500
 	N_s = 50
-	k = 100
+	k = 50
 	r = .5
 	w = .6
 	P = get_image('P', 0, size=200, sample_size=N)[0]
@@ -68,17 +71,63 @@ def puv_curve():
 
 def rips_test():
 	N = 500
-	N_s = 100
-	k = 20
-	r = .1
+	N_s = 50
+	k = 50
 	w = .6
-	P = get_image('P', 1, size=200, sample_size=N)[0]
+	P = get_image('P', 0, size=200, sample_size=N)[0]
 
 	f, ax = plt.subplots(1, 2)
-	plot_triangulation(P, plt=ax[0], N_s = N_s, k = k, r = 0.7, w = w, triangulation='rips4')
+	plot_triangulation(P, plt=ax[0], N_s = N_s, k = k, r = 0.80, w = w, triangulation='rips4')
 	ax[0].set_title("Rips Tangent Complex")
-	plot_triangulation(P, plt=ax[1], N_s = N_s, k = k, r = 0.15, w = w, triangulation='rips2')
+	plot_triangulation(P, plt=ax[1], N_s = N_s, k = k, r = 0.4, w = w, triangulation='rips2')
 	ax[1].set_title("Rips Vertex Complex")
+	plt.show()
+
+
+def delaunay_test():
+	N = 500
+	N_s = 20
+	k = 50
+	r = .2
+	w = .6
+	P = get_image('P', 0, size=200, sample_size=N)[0]
+
+	f, ax = plt.subplots(1, 2)
+	plot_triangulation(P, plt=ax[0], N_s = N_s, k = k, r = r, w = w, triangulation='delaunay4')
+	ax[0].set_title("Delaunay Triangulation of Tangent Space")
+	plot_triangulation(P, plt=ax[1], N_s = N_s, k = k, r = r, w = w, triangulation='delaunay2')
+	ax[1].set_title("Delaunay Triangulation of Vertex Space")
+	plt.show()
+
+
+def alpha_test():
+	N = 500
+	N_s = 50
+	k = 50
+	w = .7
+	P = get_image('P', 0, size=200, sample_size=N)[0]
+
+	f, ax = plt.subplots(1, 2)
+	plot_triangulation(P, plt=ax[0], N_s = N_s, k = k, r = .6, w = w, triangulation='alpha4')
+	ax[0].set_title("α Tangent Complex")
+	plot_triangulation(P, plt=ax[1], N_s = N_s, k = k, r = .2, w = w, triangulation='alpha2')
+	ax[1].set_title("α Vertex Complex")
+	plt.show()
+
+
+def delaunay_vs_alpha():
+	N = 500
+	N_s = 20
+	k = 50
+	r = .4
+	w = .6
+	P = get_image('P', 0, size=200, sample_size=N)[0]
+
+	f, ax = plt.subplots(1, 2)
+	plot_triangulation(P, plt=ax[0], N_s = N_s, k = k, r = r, w = w, triangulation='delaunay2')
+	ax[0].set_title("Delaunay Vertex Complex")
+	plot_triangulation(P, plt=ax[1], N_s = N_s, k = k, r = r, w = w, triangulation='alpha2')
+	ax[1].set_title("α Vertex Complex")
 	plt.show()
 
 

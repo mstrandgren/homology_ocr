@@ -5,14 +5,19 @@ import numpy as np
 from utils import sparse_sample, get_tspace, to_complex
 
 
-def delaunay_complex_2d(v_s):
-	tri = spatial.Delaunay(v_s)
+def delaunay_complex_2d(vertices, N_s):
+	sparse = sparse_sample(vertices, N_s)
+	landmarks = vertices[sparse,:]
+	tri = spatial.Delaunay(landmarks)
 	edges = np.concatenate([tri.simplices[:,:2], tri.simplices[:,1:], tri.simplices[:,[2,0]]], axis=0)
-	return edges
+	return edges, landmarks, sparse
 
 
-def delaunay_complex_4d(v_s):
-	tri = spatial.Delaunay(v_s)
+def delaunay_complex_4d(vertices, tangents, w, N_s):
+	tspace = get_tspace(vertices, tangents, w)
+	sparse = sparse_sample(tspace, N_s)
+	landmarks = tspace[sparse,:]
+	tri = spatial.Delaunay(landmarks)
 	edges = np.concatenate([
 		tri.simplices[:,0:2], 
 		tri.simplices[:,1:3], 
@@ -20,25 +25,19 @@ def delaunay_complex_4d(v_s):
 		tri.simplices[:,3:5], 
 		tri.simplices[:,[4,0]]
 		], axis=0)
-	return edges
+	return edges, landmarks, sparse
 
 
 def alpha_complex_2d(vertices, r, N_s):
-	sparse = sparse_sample(vertices, N_s)
-	v_s = vertices[sparse,:]
-	edges = delaunay_complex_2d(v_s)
-	edge_lengths = np.linalg.norm(v_s[edges[:,0],:] - v_s[edges[:,1],:], axis=1)
+	edges, landmarks, sparse = delaunay_complex_2d(vertices, N_s)
+	edge_lengths = np.linalg.norm(landmarks[edges[:,0],:] - landmarks[edges[:,1],:], axis=1)
 	edges = edges[edge_lengths < r, :]
-	return edges, v_s, sparse
+	return edges, landmarks, sparse
 
 
 def alpha_complex_4d(vertices, tangents, r, w, N_s):
-	tspace = get_tspace(vertices, tangents, w)
-	sparse = sparse_sample(tspace, N_s)
-	landmarks = tspace[sparse,:]
-	edges = delaunay_complex_4d(landmarks)
-
-	edge_lengths = np.linalg.norm(tspace[edges[:,0],:] - tspace[edges[:,1],:], axis=1)
+	edges, landmarks, sparse = delaunay_complex_4d(vertices, tangents, w, N_s)
+	edge_lengths = np.linalg.norm(landmarks[edges[:,0],:] - landmarks[edges[:,1],:], axis=1)
 	edges = edges[edge_lengths < r, :]
 	return edges, landmarks, sparse
 
