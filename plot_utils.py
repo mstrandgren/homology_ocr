@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import homology as hm
 import barcode as bc
 from utils import get_tspace
-
+from matplotlib.ticker import FixedLocator, FixedFormatter, NullFormatter
 
 def plot_filtration(vertices, edges = None, plt = plt, N_s = 50, k=4, r=.6, w=.5, annotate = False, triangulation = 'rips4'): 
 	vertices, tangents, curve, edges, simplices = hm.get_all(vertices, N_s, k, w, r, triangulation=triangulation, edges=edges)
@@ -43,6 +43,9 @@ def plot_barcode_gant(barcode, plt, annotate=False):
 	inf = np.max(bars[bars != math.inf]) + 1
 	markers = ('s', '.', 'x')
 	marker_size = (4,10,3)
+	lengths = barcode[:,1] - barcode[:,0]
+	barcode = barcode[lengths > 0, :]
+
 	for idx, row in enumerate(barcode):
 		start,end = row[:2]
 		if row[1] == math.inf: end = inf
@@ -53,7 +56,7 @@ def plot_barcode_gant(barcode, plt, annotate=False):
 
 	ax = get_axis(plt)
 	ax.set_xlim([-0.1 * inf, inf - 0.5])
-	ax.set_xticks(range(0,math.ceil(inf)))
+	ax.set_xticks([])
 	ax.set_yticks([])
 
 
@@ -90,7 +93,36 @@ def plot_triangulation(vertices, edges = None, plt = plt, N_s=50, k=4, r=.6, w=.
 	std_plot(plt)
 
 
+def plot_edges(vertices, edges, plt):
+	for edge in edges:
+		plt.plot(vertices[edge, 0], vertices[edge, 1], lw = 1, c = 'gray', zorder=1)
+		# if annotate:
+		# 	plt.annotate("{0}".format(edge[0]), (vertices[edge[0],0], vertices[edge[0],1]))
+		# 	plt.annotate("{0}".format(edge[1]), (vertices[edge[1],0], vertices[edge[1],1]))			
+	
+	plt.scatter(vertices[:,0],vertices[:,1], marker='.', s=5, c='k', zorder=2)
 
+
+def plot_diffs(diffs, letters, plt, inf=1e14):
+	L = len(letters)
+	M = diffs.shape[0]/L
+
+	dmax = np.max(diffs[diffs < inf/100]) * 1.1 + 1
+	diffs[diffs > inf/100] = dmax
+	plt.imshow(diffs, cmap='gray')
+
+	ax = get_axis(plt)
+	major_ticks = np.arange(-1, L)*M+(M-.5)
+	minor_ticks = np.arange(L)*M + M/2.0 - 0.5
+	for axis in (ax.xaxis, ax.yaxis):
+		axis.set_minor_locator(FixedLocator(minor_ticks))
+		axis.set_minor_formatter(FixedFormatter(letters))
+		axis.set_major_formatter(NullFormatter())
+		axis.set_tick_params(which='major', width=1)
+		axis.set_tick_params(which='minor', width=0)
+
+	ax.set_xticks(major_ticks)
+	ax.set_yticks(major_ticks)
 
 
 # --------------------------------------------------------------------------------

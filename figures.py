@@ -16,8 +16,10 @@ def run():
 	# rips_test()
 	# delaunay_test()
 	# alpha_test()
-	witness_test()
+	# witness_test()
 	# delaunay_vs_alpha()
+	# triangulation_test()
+	distance_test()
 	# image_preprocessing()
 
 def ellipse_filtration(): 
@@ -144,6 +146,80 @@ def witness_test():
 	plot_triangulation(P, plt=ax[1], N_s = N_s, k = k, r = 1, w = w, triangulation='witness2')
 	ax[1].set_title("Witness Vertex Complex")
 	plt.show()
+
+def triangulation_test():
+	N = 500
+	N_s = 30
+	k = 50
+	r = .4
+	w = .6
+	M = 3
+	letter = 'T'
+
+	f, ax = plt.subplots(3, 3)
+	for m in range(M):
+		vs,_,_,original = get_image(letter, m, size=200, sample_size=N)
+		ax[0][m].set_title("Original image")
+		ax[0][m].imshow(original, cmap='binary')
+		ax[0][m].set_xticks([])
+		ax[0][m].set_yticks([])
+
+		plot_triangulation(vs, plt=ax[1][m], N_s = N_s, k = k, r = .3, w = .7, triangulation='alpha2')
+		ax[1][m].set_title("α Complex (2D)")
+		std_plot(ax[1][m])
+
+		plot_triangulation(vs, plt=ax[2][m], N_s = N_s, k = k, r = .5, w = .7, triangulation='witness2')
+		ax[2][m].set_title("Witness Complex (2D)")
+		std_plot(ax[2][m])
+
+	plt.tight_layout()
+	plt.show()
+
+
+def distance_test():
+	letters = 'ABCDE'
+	L = len(letters)
+	M = 5
+	N = 500
+	N_s = 50
+	k = int(N/5)
+	w = .7
+	r = .5
+	triangulation = 'alpha4'
+
+	barcodes = []
+
+	f, bax = plt.subplots(len(letters),M)
+	f, iax = plt.subplots(len(letters),M)
+
+
+	for i, letter in enumerate(letters):
+		for j in range(0, M):
+			print("Doing {0}-{1}".format(letter, j))
+			idx = i * M + j
+			vertices = get_image(letter, j, size=100, sample_size=N)[0]
+			v, t, c, e, simplices = hm.get_all(vertices, N_s = N_s, k = k, r = r, w = w, triangulation=triangulation)
+			b = bc.get_barcode(simplices, degree_values=c[np.argsort(c)])
+			b = b[b[:, 2] == 0, :] # Only 1-bars
+			barcodes.append(b)
+			plot_barcode_gant(b, plt=bax[i][j])
+			bax[i][j]
+			plot_edges(v, e, iax[i][j])
+			std_plot(iax[i][j])
+
+	print("Doing diffs...")
+	M_b = len(barcodes)
+	diffs = np.zeros([M_b,M_b])
+	inf = 1e14
+	for i in range(M_b):
+		for j in range(M_b):
+			diffs[i,j] = bc.barcode_diff(barcodes[i], barcodes[j], inf=inf)
+			# print("Diff ({0},{1}) = {2:1.3f}".format(i, j, diffs[i,j]))
+
+	plt.figure()
+	plot_diffs(diffs, letters, plt)
+	plt.show()
+
 
 
 def image_preprocessing():
