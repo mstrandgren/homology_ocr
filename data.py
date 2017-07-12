@@ -29,12 +29,17 @@ def get_image(letter, number, size=200, sample_size=500, skeleton = True):
 
 	mask = image > 0
 	image = image[np.ix_(mask.any(1),mask.any(0))] # Crop
-	image = imresize(image, [size, size], interp="nearest")
+	h, w = image.shape
+	if h > w: _size = (size, int(float(size)*w/h))
+	else: _size = (int(float(size)*h/w), size)
+
+	image = imresize(image, _size, interp="nearest")
 	image[image>0] = 1 # Make binary
 	if skeleton: 
 		image = mp.skeletonize(image)
 	vertices = np.flip(np.array(np.nonzero(image)).T, axis=1)
-	vertices = vertices * 2.0 / size - 1
+	sz = np.array(image.shape[::-1]).astype(float)
+	vertices = (2 * vertices - sz)/np.max(sz) # Normalize -1,1
 	N = vertices.shape[0]
 	sample = vertices[np.random.choice(np.arange(N), size=sample_size),:]
 	return sample, vertices, image, original

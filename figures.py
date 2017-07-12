@@ -13,8 +13,8 @@ def run():
 	# ellipse_barcode()
 	# p_tangents()
 	# puv_curve()
-	rips_test()
-	# image_preprocessing()
+	# rips_test()
+	image_preprocessing()
 
 def ellipse_filtration(): 
 	vertices, edges = get_ellipse(16, .5)
