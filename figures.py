@@ -15,7 +15,8 @@ def run():
 	# puv_curve()
 	# rips_test()
 	# delaunay_test()
-	alpha_test()
+	# alpha_test()
+	witness_test()
 	# delaunay_vs_alpha()
 	# image_preprocessing()
 
@@ -128,6 +129,20 @@ def delaunay_vs_alpha():
 	ax[0].set_title("Delaunay Vertex Complex")
 	plot_triangulation(P, plt=ax[1], N_s = N_s, k = k, r = r, w = w, triangulation='alpha2')
 	ax[1].set_title("α Vertex Complex")
+	plt.show()
+
+def witness_test(): 
+	N = 500
+	N_s = 50
+	k = 50
+	w = .7
+	P = get_image('P', 0, size=200, sample_size=N)[0]
+
+	f, ax = plt.subplots(1, 2)
+	plot_triangulation(P, plt=ax[0], N_s = N_s, k = k, r = 1, w = w, triangulation='witness4')
+	ax[0].set_title("Witness Tangent Complex")
+	plot_triangulation(P, plt=ax[1], N_s = N_s, k = k, r = 1, w = w, triangulation='witness2')
+	ax[1].set_title("Witness Vertex Complex")
 	plt.show()
 
 
